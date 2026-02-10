@@ -6,13 +6,20 @@ from pydantic_settings import BaseSettings
 
 
 class VoiceProvider(str, Enum):
+    GITHUB = "github"
     OPENAI = "openai"
     ELEVENLABS = "elevenlabs"
 
 
 class Settings(BaseSettings):
     # Provider
-    voice_provider: VoiceProvider = VoiceProvider.OPENAI
+    voice_provider: VoiceProvider = VoiceProvider.GITHUB
+
+    # GitHub Models (free via GitHub Marketplace)
+    github_token: str = ""
+    github_models_endpoint: str = "https://models.github.ai/inference"
+    github_model: str = "openai/gpt-4o"
+    github_tts_voice: str = "en-US-AndrewMultilingualNeural"
 
     # OpenAI
     openai_api_key: str = ""

@@ -26,6 +26,7 @@ class TestConfigEndpoint:
         assert "provider" in data
         assert "tools" in data
         assert isinstance(data["tools"], list)
+        assert "mode" in data
 
 
 class TestIndexPage:
@@ -61,8 +62,12 @@ class TestModels:
 
     def test_provider_factory(self):
         from app.providers.factory import create_provider
+        from app.providers.github_models import GitHubModelsProvider
         from app.providers.openai_realtime import OpenAIRealtimeProvider
         from app.providers.elevenlabs_provider import ElevenLabsProvider
+
+        github_provider = create_provider("github")
+        assert isinstance(github_provider, GitHubModelsProvider)
 
         openai_provider = create_provider("openai")
         assert isinstance(openai_provider, OpenAIRealtimeProvider)

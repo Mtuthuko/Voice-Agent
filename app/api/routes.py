@@ -27,7 +27,12 @@ async def get_config() -> JSONResponse:
     return JSONResponse({
         "agent_name": settings.agent_name,
         "provider": settings.voice_provider.value,
-        "voice": settings.openai_voice if settings.voice_provider.value == "openai" else settings.elevenlabs_voice_id,
+        "voice": (
+            settings.github_tts_voice if settings.voice_provider.value == "github"
+            else settings.openai_voice if settings.voice_provider.value == "openai"
+            else settings.elevenlabs_voice_id
+        ),
+        "mode": "pipeline" if settings.voice_provider.value == "github" else "realtime",
         "tools": registry.list_tools(),
         "max_turns": settings.max_conversation_turns,
     })

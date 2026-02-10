@@ -106,6 +106,7 @@
                     <label class="setting">
                         <span>Provider:</span>
                         <select id="providerSelect">
+                            <option value="github">GitHub Models (Free)</option>
                             <option value="openai">OpenAI Realtime</option>
                             <option value="elevenlabs">ElevenLabs</option>
                         </select>
@@ -113,12 +114,15 @@
                     <label class="setting">
                         <span>Voice:</span>
                         <select id="voiceSelect">
-                            <option value="alloy">Alloy</option>
-                            <option value="echo">Echo</option>
-                            <option value="fable">Fable</option>
-                            <option value="onyx">Onyx</option>
-                            <option value="nova">Nova</option>
-                            <option value="shimmer">Shimmer</option>
+                            <option value="en-US-AndrewMultilingualNeural">Andrew (EN)</option>
+                            <option value="en-US-AvaMultilingualNeural">Ava (EN)</option>
+                            <option value="en-US-BrianMultilingualNeural">Brian (EN)</option>
+                            <option value="en-US-EmmaMultilingualNeural">Emma (EN)</option>
+                            <option value="en-GB-SoniaNeural">Sonia (UK)</option>
+                            <option value="en-ZA-LeahNeural">Leah (ZA)</option>
+                            <option value="alloy">Alloy (OpenAI)</option>
+                            <option value="nova">Nova (OpenAI)</option>
+                            <option value="shimmer">Shimmer (OpenAI)</option>
                         </select>
                     </label>
                     <label class="setting toggle">
@@ -131,7 +135,7 @@
 
         <!-- Footer -->
         <footer class="footer">
-            <p>Built with FastAPI + OpenAI Realtime API + ElevenLabs</p>
+            <p>Built with FastAPI + GitHub Models (GPT-4o) + Edge-TTS + OpenAI Realtime API</p>
         </footer>
     </div>
 

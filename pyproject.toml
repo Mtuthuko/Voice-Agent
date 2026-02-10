@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "voice-agent"
 version = "1.0.0"
-description = "Production-ready Conversational Voice Agent with OpenAI Realtime API and ElevenLabs integration"
+description = "Production-ready Conversational Voice Agent with GitHub Models (free GPT-4o), OpenAI Realtime API, and ElevenLabs"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
     {name = "Mtuthuko Mngomezulu", email = "Mngomezuluntuthuko@gmail.com"},
 ]
-keywords = ["voice-agent", "conversational-ai", "openai", "elevenlabs", "realtime", "fastapi"]
+keywords = ["voice-agent", "conversational-ai", "openai", "elevenlabs", "github-models", "realtime", "fastapi", "edge-tts"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -36,6 +36,7 @@ dependencies = [
     "aiofiles>=23.2.1",
     "openai>=1.50.0",
     "elevenlabs>=1.0.0",
+    "edge-tts>=6.1.0",
 ]
 
 [project.optional-dependencies]

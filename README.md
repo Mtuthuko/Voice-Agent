@@ -1,15 +1,18 @@
 # Atlas - Conversational Voice Agent
 
-A production-ready, real-time conversational voice AI agent built with **FastAPI**, **OpenAI Realtime API**, and **ElevenLabs Conversational AI**. Features low-latency voice-to-voice communication, tool calling, and a web-based interface with live audio visualization.
+A production-ready conversational voice AI agent built with **FastAPI**, **GitHub Models** (free GPT-4o), **Edge-TTS**, **OpenAI Realtime API**, and **ElevenLabs**. Features real-time voice conversation, tool calling, and a web-based interface with live audio visualization.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white)
+![GitHub Models](https://img.shields.io/badge/GitHub_Models-GPT--4o_Free-181717?logo=github&logoColor=white)
 ![OpenAI](https://img.shields.io/badge/OpenAI-Realtime_API-412991?logo=openai&logoColor=white)
 ![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Conversational_AI-000000)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## Architecture
+
+The system supports two modes: **Pipeline** (free) and **Realtime** (paid API keys).
 
 ```
                      Browser Client
@@ -32,26 +35,45 @@ A production-ready, real-time conversational voice AI agent built with **FastAPI
                  │  └────────────┘  │
                  └────────┬────────┘
                           |
-              ┌───────────┴───────────┐
-              |                       |
-    ┌─────────┴─────────┐  ┌─────────┴─────────┐
-    │  OpenAI Realtime   │  │    ElevenLabs      │
-    │  Provider          │  │    Provider         │
-    │                    │  │                     │
-    │  - Voice-to-Voice  │  │  - Ultra-low TTS    │
-    │  - Server VAD      │  │  - Voice cloning    │
-    │  - Tool calling    │  │  - Conversational   │
-    │  - Whisper STT     │  │    AI               │
-    └────────────────────┘  └─────────────────────┘
+          ┌───────────────┼───────────────┐
+          |               |               |
+┌─────────┴────────┐ ┌───┴────────┐ ┌────┴──────────┐
+│  GitHub Models    │ │  OpenAI    │ │  ElevenLabs   │
+│  (FREE)           │ │  Realtime  │ │  Provider     │
+│                   │ │  Provider  │ │               │
+│  Browser STT ──►  │ │            │ │               │
+│  GitHub GPT-4o ►  │ │ Voice-to-  │ │ Ultra-low     │
+│  Edge-TTS ──►     │ │ Voice      │ │ latency TTS   │
+│  Audio playback   │ │ Server VAD │ │ Conversational│
+│                   │ │ Tool calls │ │ AI            │
+└───────────────────┘ └────────────┘ └───────────────┘
+```
+
+### Pipeline Mode (GitHub Models - Free)
+
+```
+User speaks → Browser Web Speech API (STT) → text → WebSocket →
+→ GitHub Models API (GPT-4o) → response text → Edge-TTS (free) →
+→ MP3 audio → WebSocket → Browser playback
+```
+
+### Realtime Mode (OpenAI / ElevenLabs)
+
+```
+User speaks → PCM16 audio → WebSocket →
+→ Provider (STT + LLM + TTS in one stream) →
+→ PCM16 audio → WebSocket → Browser playback
 ```
 
 ## Features
 
-- **Dual Provider Support** - Switch between OpenAI Realtime API and ElevenLabs at runtime
-- **Real-Time Voice-to-Voice** - Sub-second latency using WebSocket streaming with PCM16 audio
-- **Server-Side VAD** - Automatic voice activity detection with configurable threshold
+- **Three Provider Support** - GitHub Models (free), OpenAI Realtime API, or ElevenLabs
+- **Zero-Cost Voice AI** - Full voice agent with just a free GitHub token (no paid API keys required)
 - **Tool Calling** - Extensible tool system with built-in weather, calculator, datetime, and knowledge lookup
 - **Web Interface** - Browser-based client with real-time audio waveform visualization
+- **Dual Audio Modes** - MP3 streaming (pipeline) or PCM16 raw audio (realtime)
+- **Browser STT** - Client-side speech recognition via Web Speech API (pipeline mode)
+- **Edge-TTS** - Free, high-quality text-to-speech with 6+ voice options
 - **Text Fallback** - Type messages when voice isn't available
 - **Conversation Memory** - Full conversation state tracking per session
 - **Provider Abstraction** - Clean interface pattern for adding new voice providers
@@ -71,8 +93,9 @@ A production-ready, real-time conversational voice AI agent built with **FastAPI
 ### Prerequisites
 
 - Python 3.10+
-- An [OpenAI API key](https://platform.openai.com/api-keys) with Realtime API access
-- (Optional) An [ElevenLabs API key](https://elevenlabs.io/) for the ElevenLabs provider
+- A [GitHub Personal Access Token](https://github.com/settings/tokens) (free!) with `models:read` permission
+
+> **No paid API keys needed!** The default GitHub Models provider gives you free access to GPT-4o and Edge-TTS provides free text-to-speech.
 
 ### Installation
 
@@ -90,8 +113,14 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your API keys
+# Edit .env → set GITHUB_TOKEN=ghp_your-token-here
 ```
+
+### Get a GitHub Token
+
+1. Go to [GitHub Settings → Developer Settings → Personal Access Tokens → Fine-grained tokens](https://github.com/settings/personal-access-tokens/new)
+2. Create a token with **"Models: Read"** permission
+3. Copy the token into your `.env` file as `GITHUB_TOKEN`
 
 ### Run
 
@@ -117,11 +146,22 @@ docker compose up -d
 
 ## Usage
 
-1. **Connect** - Click "Connect" to establish a WebSocket session with the selected provider
-2. **Speak** - Click the microphone button and start talking. The agent uses server-side voice activity detection to know when you've finished speaking
-3. **Listen** - The agent responds with natural speech, streamed in real-time. Watch the audio visualizer react to the conversation
-4. **Tools** - Ask about the weather, do math, or look up information. The agent will call the appropriate tool and relay the results conversationally
+1. **Connect** - Click "Connect" to establish a WebSocket session
+2. **Speak** - Click the microphone button and start talking. In pipeline mode, your browser transcribes your speech automatically
+3. **Listen** - The agent responds with natural speech via Edge-TTS. Watch the audio visualizer react to the conversation
+4. **Tools** - Ask about the weather, do math, or look up information. The agent calls the appropriate tool and relays results naturally
 5. **Text** - Type a message as a fallback when voice isn't available
+
+### Voice Options (Edge-TTS)
+
+| Voice | Description |
+|-------|-------------|
+| `en-US-AndrewMultilingualNeural` | Andrew - American English (default) |
+| `en-US-AvaMultilingualNeural` | Ava - American English |
+| `en-US-BrianMultilingualNeural` | Brian - American English |
+| `en-US-EmmaMultilingualNeural` | Emma - American English |
+| `en-GB-SoniaNeural` | Sonia - British English |
+| `en-ZA-LeahNeural` | Leah - South African English |
 
 ## Project Structure
 
@@ -129,35 +169,36 @@ docker compose up -d
 Voice-Agent/
 ├── app/
 │   ├── api/
-│   │   └── routes.py          # HTTP + WebSocket endpoints
+│   │   └── routes.py              # HTTP + WebSocket endpoints
 │   ├── core/
-│   │   ├── config.py          # Pydantic settings management
-│   │   └── logging.py         # Structured logging
+│   │   ├── config.py              # Pydantic settings management
+│   │   └── logging.py             # Structured logging
 │   ├── models/
-│   │   └── schemas.py         # Pydantic models
+│   │   └── schemas.py             # Pydantic models
 │   ├── providers/
-│   │   ├── base.py            # Abstract provider interface
-│   │   ├── openai_realtime.py # OpenAI Realtime API integration
-│   │   ├── elevenlabs_provider.py  # ElevenLabs integration
-│   │   └── factory.py         # Provider factory
+│   │   ├── base.py                # Abstract provider interface
+│   │   ├── github_models.py       # GitHub Models + Edge-TTS pipeline
+│   │   ├── openai_realtime.py     # OpenAI Realtime API integration
+│   │   ├── elevenlabs_provider.py # ElevenLabs integration
+│   │   └── factory.py             # Provider factory
 │   ├── services/
-│   │   └── session_manager.py # Session orchestration + tool execution
+│   │   └── session_manager.py     # Session orchestration + tool execution
 │   ├── tools/
-│   │   ├── registry.py        # Tool registration system
-│   │   └── built_in.py        # Built-in tool implementations
-│   └── main.py                # FastAPI application
+│   │   ├── registry.py            # Tool registration system
+│   │   └── built_in.py            # Built-in tool implementations
+│   └── main.py                    # FastAPI application
 ├── frontend/
 │   ├── static/
-│   │   ├── css/styles.css     # UI styles
+│   │   ├── css/styles.css         # UI styles
 │   │   └── js/
-│   │       ├── app.js         # Main application controller
-│   │       ├── audio-processor.js  # Mic capture + PCM16 conversion
-│   │       └── visualizer.js  # Real-time audio visualization
+│   │       ├── app.js             # Main controller (pipeline + realtime)
+│   │       ├── audio-processor.js # Mic capture + PCM16 conversion
+│   │       └── visualizer.js      # Real-time audio visualization
 │   └── templates/
-│       └── index.html         # Web interface
+│       └── index.html             # Web interface
 ├── tests/
-│   ├── test_api.py            # API endpoint tests
-│   └── test_tools.py          # Tool system tests
+│   ├── test_api.py                # API endpoint tests
+│   └── test_tools.py              # Tool system tests
 ├── docker-compose.yml
 ├── Dockerfile
 ├── pyproject.toml
@@ -190,7 +231,7 @@ async def search_database(query: str, limit: int = 5) -> str:
     return json.dumps({"results": results})
 ```
 
-Tools are automatically available to the voice agent and appear in the OpenAI Realtime function calling schema.
+Tools are automatically available to the voice agent and generate OpenAI-compatible function calling schemas.
 
 ## Configuration
 
@@ -198,12 +239,14 @@ All settings are managed via environment variables (see `.env.example`):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VOICE_PROVIDER` | `openai` | Provider: `openai` or `elevenlabs` |
-| `OPENAI_API_KEY` | - | OpenAI API key |
+| `VOICE_PROVIDER` | `github` | Provider: `github`, `openai`, or `elevenlabs` |
+| `GITHUB_TOKEN` | - | GitHub PAT with `models:read` permission (free) |
+| `GITHUB_MODEL` | `openai/gpt-4o` | GitHub Models model ID |
+| `GITHUB_TTS_VOICE` | `en-US-AndrewMultilingualNeural` | Edge-TTS voice |
+| `OPENAI_API_KEY` | - | OpenAI API key (for realtime mode) |
 | `OPENAI_REALTIME_MODEL` | `gpt-4o-realtime-preview` | OpenAI model |
-| `OPENAI_VOICE` | `alloy` | Voice: alloy, echo, fable, onyx, nova, shimmer |
+| `OPENAI_VOICE` | `alloy` | OpenAI voice |
 | `ELEVENLABS_API_KEY` | - | ElevenLabs API key |
-| `ELEVENLABS_VOICE_ID` | `21m00Tcm4TlvDq8ikWAM` | ElevenLabs voice ID |
 | `AGENT_NAME` | `Atlas` | Agent display name |
 | `AGENT_PERSONA` | (see .env.example) | System prompt / persona |
 | `APP_PORT` | `8000` | Server port |
@@ -224,8 +267,10 @@ pytest --cov=app --cov-report=term-missing
 ## Tech Stack
 
 - **Backend**: Python, FastAPI, WebSockets, Pydantic
-- **Voice Providers**: OpenAI Realtime API, ElevenLabs Conversational AI
-- **Audio**: PCM16 at 24kHz, Web Audio API, Server-Side VAD
+- **LLM**: GitHub Models (free GPT-4o), OpenAI Realtime API
+- **TTS**: Edge-TTS (free), OpenAI TTS, ElevenLabs
+- **STT**: Web Speech API (browser, free), OpenAI Whisper
+- **Audio**: PCM16/MP3 streaming, Web Audio API
 - **Frontend**: Vanilla JS, Canvas API (audio visualization)
 - **Infrastructure**: Docker, Docker Compose, uvicorn
 
