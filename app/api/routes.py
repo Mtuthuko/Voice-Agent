@@ -1,4 +1,8 @@
+"""API routes for health checks, configuration, and WebSocket voice communication."""
+
 from __future__ import annotations
+
+import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
@@ -11,19 +15,47 @@ from app.tools.registry import registry
 
 router = APIRouter()
 
+_start_time = time.monotonic()
+
 
 @router.get("/api/health")
 async def health_check() -> JSONResponse:
+    """Liveness probe: confirms the service is running."""
     return JSONResponse({
         "status": "healthy",
         "agent": settings.agent_name,
         "provider": settings.voice_provider.value,
+        "uptime_seconds": round(time.monotonic() - _start_time),
     })
+
+
+@router.get("/api/ready")
+async def readiness_check() -> JSONResponse:
+    """Readiness probe: confirms the service can accept requests."""
+    provider = settings.voice_provider.value
+    ready = True
+    reason = "ok"
+
+    if provider == "github" and not settings.github_token:
+        ready = False
+        reason = "GITHUB_TOKEN not configured"
+    elif provider == "openai" and not settings.openai_api_key:
+        ready = False
+        reason = "OPENAI_API_KEY not configured"
+    elif provider == "elevenlabs" and not settings.elevenlabs_api_key:
+        ready = False
+        reason = "ELEVENLABS_API_KEY not configured"
+
+    status_code = 200 if ready else 503
+    return JSONResponse(
+        {"ready": ready, "provider": provider, "reason": reason},
+        status_code=status_code,
+    )
 
 
 @router.get("/api/config")
 async def get_config() -> JSONResponse:
-    """Return public configuration for the frontend."""
+    """Return public configuration for the frontend (no secrets)."""
     return JSONResponse({
         "agent_name": settings.agent_name,
         "provider": settings.voice_provider.value,
@@ -40,12 +72,19 @@ async def get_config() -> JSONResponse:
 
 @router.websocket("/ws/voice")
 async def voice_websocket(websocket: WebSocket) -> None:
-    """Main WebSocket endpoint for real-time voice communication."""
+    """Main WebSocket endpoint for real-time voice communication.
+
+    Protocol:
+        1. Client connects and sends a JSON config message.
+        2. Server creates a SessionManager and begins bidirectional streaming.
+        3. Client sends audio bytes (realtime) or text.send messages (pipeline).
+        4. Server streams back transcript, audio, and tool events.
+        5. Either side can close the connection.
+    """
     await websocket.accept()
     logger.info("Client connected to voice WebSocket")
 
     try:
-        # Receive initial config from client
         init_data = await websocket.receive_json()
         config = SessionConfig(
             provider=init_data.get("provider", settings.voice_provider.value),

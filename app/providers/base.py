@@ -1,3 +1,9 @@
+"""Abstract base class defining the voice provider interface.
+
+All providers (GitHub Models, OpenAI Realtime, ElevenLabs) implement this
+contract so the SessionManager can work with any backend transparently.
+"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -7,7 +13,12 @@ from app.models.schemas import ConversationState, SessionConfig
 
 
 class VoiceProviderBase(ABC):
-    """Abstract base class for voice providers."""
+    """Interface that every voice provider must implement.
+
+    Providers manage their own connections and translate between the
+    normalized event format used by SessionManager and the provider's
+    native protocol.
+    """
 
     @abstractmethod
     async def connect(self, config: SessionConfig) -> None:

@@ -1,3 +1,5 @@
+"""FastAPI application entry point with middleware, security, and lifecycle management."""
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -12,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from app.api.routes import router
 from app.core.config import settings
 from app.core.logging import logger
+from app.core.middleware import RequestTracingMiddleware, SecurityHeadersMiddleware
 
 
 @asynccontextmanager
@@ -28,11 +31,16 @@ app = FastAPI(
     description="Production-ready Conversational Voice Agent with real-time audio streaming",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url="/docs" if not settings.is_production else None,
+    redoc_url="/redoc" if not settings.is_production else None,
 )
 
+# Middleware stack (order matters — outermost first)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestTracingMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

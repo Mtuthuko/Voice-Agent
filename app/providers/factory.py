@@ -1,3 +1,5 @@
+"""Factory for creating voice provider instances by name or enum value."""
+
 from __future__ import annotations
 
 from app.core.config import VoiceProvider
@@ -8,7 +10,7 @@ from app.providers.openai_realtime import OpenAIRealtimeProvider
 
 
 def create_provider(provider_type: str | VoiceProvider) -> VoiceProviderBase:
-    """Factory to create the appropriate voice provider."""
+    """Instantiate a voice provider by name or enum value."""
     if isinstance(provider_type, str):
         provider_type = VoiceProvider(provider_type)
 

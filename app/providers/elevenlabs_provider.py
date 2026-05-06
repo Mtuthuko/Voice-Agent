@@ -1,3 +1,9 @@
+"""ElevenLabs Conversational AI provider for ultra-low-latency voice synthesis.
+
+Connects via WebSocket to the ElevenLabs convai endpoint.
+Audio is streamed as base64-encoded chunks with server-side VAD.
+"""
+
 from __future__ import annotations
 
 import base64
@@ -17,7 +23,10 @@ ELEVENLABS_WS_URL = "wss://api.elevenlabs.io/v1/convai/conversation"
 
 
 class ElevenLabsProvider(VoiceProviderBase):
-    """Provider for ElevenLabs Conversational AI with ultra-low-latency voice synthesis."""
+    """Provider for ElevenLabs Conversational AI with ultra-low-latency voice synthesis.
+
+    Lifecycle: connect() -> send_audio() <-> receive_events() -> disconnect()
+    """
 
     def __init__(self) -> None:
         self._ws: ClientConnection | None = None

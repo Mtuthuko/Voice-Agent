@@ -16,6 +16,28 @@ class TestHealthEndpoint:
         assert "agent" in data
         assert "provider" in data
 
+    def test_health_includes_uptime(self):
+        response = client.get("/api/health")
+        data = response.json()
+        assert "uptime_seconds" in data
+        assert isinstance(data["uptime_seconds"], int)
+
+
+class TestReadinessEndpoint:
+    def test_readiness_returns_provider(self):
+        response = client.get("/api/ready")
+        data = response.json()
+        assert "ready" in data
+        assert "provider" in data
+        assert "reason" in data
+
+    def test_readiness_not_ready_without_credentials(self):
+        response = client.get("/api/ready")
+        data = response.json()
+        # In test env, no tokens are set, so should be not ready
+        assert data["ready"] is False
+        assert response.status_code == 503
+
 
 class TestConfigEndpoint:
     def test_get_config(self):
@@ -27,6 +49,21 @@ class TestConfigEndpoint:
         assert "tools" in data
         assert isinstance(data["tools"], list)
         assert "mode" in data
+
+
+class TestSecurityHeaders:
+    def test_security_headers_present(self):
+        response = client.get("/api/health")
+        assert response.headers["X-Content-Type-Options"] == "nosniff"
+        assert response.headers["X-Frame-Options"] == "DENY"
+        assert response.headers["X-XSS-Protection"] == "1; mode=block"
+        assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+        assert response.headers["Permissions-Policy"] == "microphone=(self)"
+
+    def test_correlation_id_header(self):
+        response = client.get("/api/config")
+        assert "X-Correlation-ID" in response.headers
+        assert len(response.headers["X-Correlation-ID"]) > 0
 
 
 class TestIndexPage:

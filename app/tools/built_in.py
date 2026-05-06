@@ -1,3 +1,9 @@
+"""Built-in tools available to all voice providers.
+
+Includes weather lookup (Open-Meteo), safe math evaluation,
+UTC datetime, and a sample knowledge base searcher.
+"""
+
 from __future__ import annotations
 
 import json

@@ -1,3 +1,10 @@
+"""OpenAI Realtime API provider for native voice-to-voice streaming.
+
+Uses a persistent WebSocket connection to OpenAI's Realtime API endpoint.
+Audio flows bidirectionally as base64-encoded PCM16 at 24 kHz.
+Supports server-side VAD, function calling, and audio transcription.
+"""
+
 from __future__ import annotations
 
 import base64
@@ -18,7 +25,10 @@ OPENAI_REALTIME_URL = "wss://api.openai.com/v1/realtime"
 
 
 class OpenAIRealtimeProvider(VoiceProviderBase):
-    """Provider for OpenAI's Realtime API with native voice-to-voice capabilities."""
+    """Provider for OpenAI's Realtime API with native voice-to-voice capabilities.
+
+    Lifecycle: connect() -> send_audio()/send_text() <-> receive_events() -> disconnect()
+    """
 
     def __init__(self) -> None:
         self._ws: ClientConnection | None = None

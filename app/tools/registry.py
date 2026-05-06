@@ -1,3 +1,9 @@
+"""Decorator-based tool registry that generates OpenAI function calling schemas.
+
+Register tools with ``@registry.register(...)`` and they become available
+to any voice provider that supports function calling.
+"""
+
 from __future__ import annotations
 
 import json
@@ -9,13 +15,17 @@ ToolFunction = Callable[..., Coroutine[Any, Any, str]]
 
 
 class ToolDefinition:
+    """Metadata and handler for a single registered tool."""
+
+    __slots__ = ("name", "description", "parameters", "handler")
+
     def __init__(
         self,
         name: str,
         description: str,
         parameters: dict[str, Any],
         handler: ToolFunction,
-    ):
+    ) -> None:
         self.name = name
         self.description = description
         self.parameters = parameters
@@ -31,6 +41,8 @@ class ToolDefinition:
 
 
 class ToolRegistry:
+    """Central registry mapping tool names to their definitions and handlers."""
+
     def __init__(self) -> None:
         self._tools: dict[str, ToolDefinition] = {}
 

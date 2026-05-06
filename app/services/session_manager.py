@@ -1,3 +1,9 @@
+"""Session lifecycle management for voice agent conversations.
+
+Bridges the browser WebSocket and the voice provider, handling bidirectional
+event routing, tool execution, and graceful teardown.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -6,7 +12,6 @@ from typing import Any
 
 from fastapi import WebSocket
 
-from app.core.config import settings
 from app.core.logging import logger
 from app.models.schemas import SessionConfig
 from app.providers.base import VoiceProviderBase
@@ -52,7 +57,10 @@ class SessionManager:
     async def stop(self) -> None:
         """Gracefully stop the session."""
         self._running = False
-        await self.provider.disconnect()
+        try:
+            await self.provider.disconnect()
+        except Exception as e:
+            logger.warning(f"Error during disconnect: {e}")
         logger.info("Session stopped")
 
     async def _client_to_provider(self) -> None:

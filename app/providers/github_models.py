@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import io
 import json
 import uuid
 from typing import Any, AsyncIterator
@@ -36,7 +35,7 @@ class GitHubModelsProvider(VoiceProviderBase):
         self._event_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         self._connected = False
         self._tts_voice: str = settings.github_tts_voice
-        self._messages: list[dict[str, str]] = []
+        self._messages: list[dict[str, Any]] = []
 
     async def connect(self, config: SessionConfig) -> None:
         self._session_id = str(uuid.uuid4())
