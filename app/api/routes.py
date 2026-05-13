@@ -36,7 +36,10 @@ async def readiness_check() -> JSONResponse:
     ready = True
     reason = "ok"
 
-    if provider == "github" and not settings.github_token:
+    if provider == "groq" and not settings.groq_api_key:
+        ready = False
+        reason = "GROQ_API_KEY not configured"
+    elif provider == "github" and not settings.github_token:
         ready = False
         reason = "GITHUB_TOKEN not configured"
     elif provider == "openai" and not settings.openai_api_key:
@@ -60,11 +63,12 @@ async def get_config() -> JSONResponse:
         "agent_name": settings.agent_name,
         "provider": settings.voice_provider.value,
         "voice": (
-            settings.github_tts_voice if settings.voice_provider.value == "github"
+            settings.groq_tts_voice if settings.voice_provider.value == "groq"
+            else settings.github_tts_voice if settings.voice_provider.value == "github"
             else settings.openai_voice if settings.voice_provider.value == "openai"
             else settings.elevenlabs_voice_id
         ),
-        "mode": "pipeline" if settings.voice_provider.value == "github" else "realtime",
+        "mode": "pipeline" if settings.voice_provider.value in ("groq", "github") else "realtime",
         "tools": registry.list_tools(),
         "max_turns": settings.max_conversation_turns,
     })

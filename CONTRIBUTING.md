@@ -3,7 +3,8 @@
 ## Prerequisites
 
 - Python 3.11+
-- A [GitHub personal access token](https://github.com/settings/tokens) with `models:read` scope (for the free GitHub Models provider)
+- A free [Groq API key](https://console.groq.com/keys) (recommended — runs open-source Llama 3.3 70B)
+- _or_ a [GitHub personal access token](https://github.com/settings/tokens) with `models:read` scope (for the GitHub Models provider)
 
 ## Setup
 
@@ -21,7 +22,7 @@ pip install -r requirements.txt
 
 # Copy environment template and add your token
 cp .env.example .env
-# Edit .env and set GITHUB_TOKEN=ghp_...
+# Edit .env and set GROQ_API_KEY=gsk_... (or GITHUB_TOKEN=ghp_...)
 ```
 
 ## Running Locally
@@ -51,6 +52,7 @@ app/
   providers/
     base.py              # Abstract provider interface
     factory.py           # Provider factory
+    groq_provider.py     # Free pipeline: Groq (Llama 3.3) + Edge-TTS
     github_models.py     # Free pipeline: GitHub Models + Edge-TTS
     openai_realtime.py   # OpenAI Realtime API (WebSocket)
     elevenlabs_provider.py  # ElevenLabs Conversational AI

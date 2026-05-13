@@ -34,8 +34,8 @@ class ToolResult(BaseModel):
 
 
 class SessionConfig(BaseModel):
-    provider: str = "openai"
-    voice: str = "alloy"
+    provider: str = "groq"
+    voice: str = "en-US-AndrewMultilingualNeural"
     system_prompt: str = ""
     tools_enabled: bool = True
     turn_detection: bool = True

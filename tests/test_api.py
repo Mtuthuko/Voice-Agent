@@ -94,14 +94,18 @@ class TestModels:
         from app.models.schemas import SessionConfig
 
         config = SessionConfig()
-        assert config.provider == "openai"
+        assert config.provider == "groq"
         assert config.tools_enabled is True
 
     def test_provider_factory(self):
         from app.providers.factory import create_provider
+        from app.providers.groq_provider import GroqProvider
         from app.providers.github_models import GitHubModelsProvider
         from app.providers.openai_realtime import OpenAIRealtimeProvider
         from app.providers.elevenlabs_provider import ElevenLabsProvider
+
+        groq_provider = create_provider("groq")
+        assert isinstance(groq_provider, GroqProvider)
 
         github_provider = create_provider("github")
         assert isinstance(github_provider, GitHubModelsProvider)

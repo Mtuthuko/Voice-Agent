@@ -16,6 +16,7 @@ from pydantic_settings import BaseSettings
 class VoiceProvider(str, Enum):
     """Supported voice provider backends."""
 
+    GROQ = "groq"
     GITHUB = "github"
     OPENAI = "openai"
     ELEVENLABS = "elevenlabs"
@@ -30,7 +31,12 @@ class Settings(BaseSettings):
     """
 
     # --- Provider Selection ---
-    voice_provider: VoiceProvider = VoiceProvider.GITHUB
+    voice_provider: VoiceProvider = VoiceProvider.GROQ
+
+    # --- Groq (free, ultra-fast open-source model inference) ---
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+    groq_tts_voice: str = "en-US-AndrewMultilingualNeural"
 
     # --- GitHub Models (free via GitHub Marketplace) ---
     github_token: str = ""
