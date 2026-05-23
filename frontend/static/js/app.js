@@ -2,7 +2,7 @@
  * Voice Agent - Main Application Controller
  *
  * Supports two modes:
- * - "pipeline" (GitHub Models): Browser STT (Web Speech API) → LLM → Edge-TTS (MP3)
+ * - "pipeline" (Groq/GitHub Models): Browser STT → LLM (streaming) → Edge-TTS (MP3)
  * - "realtime" (OpenAI/ElevenLabs): Raw PCM16 audio streaming via WebSocket
  */
 (function () {
@@ -30,16 +30,24 @@
     let visualizer = null;
     let isConnected = false;
     let isMicActive = false;
+    let isSpeaking = false;
     let currentTranscriptEl = null;
-    let currentMode = 'pipeline'; // 'pipeline' or 'realtime'
+    let currentMode = 'pipeline';
 
     // --- Pipeline mode: Speech Recognition ---
     let recognition = null;
-    let mp3Player = null; // HTMLAudioElement for playing MP3 chunks
 
     // --- Initialize Visualizer ---
     visualizer = new AudioVisualizer('visualizer');
     visualizer.clearCanvas();
+
+    // --- Provider Labels ---
+    const PROVIDER_LABELS = {
+        groq: 'Groq (Llama 3.3)',
+        github: 'GitHub Models',
+        openai: 'OpenAI Realtime',
+        elevenlabs: 'ElevenLabs',
+    };
 
     // --- Status Helpers ---
     function setStatus(state, text) {
@@ -53,7 +61,7 @@
 
     // --- Mode Detection ---
     function isPipelineMode() {
-        return providerSelect.value === 'github';
+        return providerSelect.value === 'groq' || providerSelect.value === 'github';
     }
 
     // --- Transcript ---
@@ -113,7 +121,7 @@
         const voice = voiceSelect.value;
         const toolsEnabled = toolsToggle.checked;
 
-        currentMode = (provider === 'github') ? 'pipeline' : 'realtime';
+        currentMode = isPipelineMode() ? 'pipeline' : 'realtime';
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/ws/voice`;
@@ -129,9 +137,9 @@
                     provider: provider,
                     voice: voice,
                     tools_enabled: toolsEnabled,
-                    turn_detection: provider !== 'github', // pipeline uses client-side STT
+                    turn_detection: !isPipelineMode(),
                 }));
-                providerBadge.textContent = provider === 'github' ? 'GitHub Models' : provider;
+                providerBadge.textContent = PROVIDER_LABELS[provider] || provider;
             };
 
             ws.onmessage = (event) => {
@@ -155,6 +163,21 @@
     }
 
     // =========================================================================
+    // Barge-in: Interrupt agent when user starts talking
+    // =========================================================================
+    function bargeIn() {
+        if (!isSpeaking) return;
+        stopMp3Playback();
+        if (audioProcessor) audioProcessor.stopPlayback();
+        isSpeaking = false;
+        visualizer.setSpeaking(false);
+        currentTranscriptEl = null;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'interrupt' }));
+        }
+    }
+
+    // =========================================================================
     // Server Event Handler
     // =========================================================================
     function handleServerEvent(message) {
@@ -174,12 +197,17 @@
                 setStatus('connected', 'Session ready');
                 break;
 
+            case 'response.thinking':
+                setStatus('thinking', 'Thinking...');
+                setAvatar('thinking');
+                break;
+
             case 'audio.delta':
                 if (data.audio) {
+                    isSpeaking = true;
                     if (data.format === 'mp3') {
                         playMp3Chunk(data.audio);
                     } else {
-                        // PCM16 for realtime providers
                         if (!audioProcessor) initAudioProcessor();
                         audioProcessor.playAudio(data.audio);
                     }
@@ -190,8 +218,9 @@
                 break;
 
             case 'audio.done':
-                // Small delay to let last audio chunk finish playing
                 setTimeout(() => {
+                    if (!isSpeaking) return;
+                    isSpeaking = false;
                     setStatus('connected', isPipelineMode() ? 'Ready' : 'Listening...');
                     setAvatar('active');
                     visualizer.setSpeaking(false);
@@ -204,15 +233,15 @@
                         currentTranscriptEl = addTranscript('assistant', '');
                     }
                     updateCurrentTranscript(data.text);
-                    setStatus('speaking', 'Speaking...');
-                    setAvatar('speaking');
-                    visualizer.setSpeaking(true);
+                    if (!isSpeaking) {
+                        setStatus('speaking', 'Speaking...');
+                        setAvatar('speaking');
+                    }
                 }
                 break;
 
             case 'transcript.done':
                 if (data.role === 'user' && data.text) {
-                    // In pipeline mode, we already added the transcript client-side
                     if (!isPipelineMode()) {
                         addTranscript('user', data.text);
                     }
@@ -225,12 +254,9 @@
                 break;
 
             case 'speech.started':
+                bargeIn();
                 setStatus('listening', 'Listening...');
                 setAvatar('active');
-                visualizer.setSpeaking(false);
-                if (audioProcessor) audioProcessor.stopPlayback();
-                stopMp3Playback();
-                currentTranscriptEl = null;
                 break;
 
             case 'speech.stopped':
@@ -239,6 +265,7 @@
 
             case 'response.done':
                 setTimeout(() => {
+                    isSpeaking = false;
                     setStatus('connected', isPipelineMode() ? 'Ready' : 'Listening...');
                     setAvatar('active');
                     visualizer.setSpeaking(false);
@@ -271,6 +298,7 @@
     // =========================================================================
     function handleDisconnect() {
         isConnected = false;
+        isSpeaking = false;
         ws = null;
 
         setStatus('', 'Disconnected');
@@ -303,6 +331,7 @@
     // =========================================================================
     let mp3Chunks = [];
     let mp3Playing = false;
+    let mp3Player = null;
 
     function playMp3Chunk(base64Audio) {
         mp3Chunks.push(base64Audio);
@@ -318,7 +347,6 @@
             return;
         }
 
-        // Collect all available chunks into one blob for smoother playback
         const allChunks = mp3Chunks.splice(0, mp3Chunks.length);
         const binaryParts = allChunks.map(b64 => {
             const binary = atob(b64);
@@ -337,7 +365,6 @@
 
         mp3Player = new Audio(url);
 
-        // Connect to visualizer via AudioContext for waveform display
         try {
             if (!audioProcessor) {
                 const tempProcessor = new AudioProcessor();
@@ -426,12 +453,15 @@
                 }
             }
 
-            // Show interim results in status
+            // Barge-in: if user is speaking while agent talks, interrupt
+            if ((interim || finalTranscript) && isSpeaking) {
+                bargeIn();
+            }
+
             if (interim) {
                 setStatus('listening', `Hearing: "${interim.slice(-50)}"`);
             }
 
-            // When we get a final result, send it after a short pause
             if (finalTranscript) {
                 clearTimeout(silenceTimer);
                 silenceTimer = setTimeout(() => {
@@ -442,12 +472,11 @@
                         setStatus('connected', 'Processing...');
                         finalTranscript = '';
                     }
-                }, 800);
+                }, 500);
             }
         };
 
         recognition.onend = () => {
-            // Auto-restart if mic is still active
             if (isMicActive && isConnected) {
                 try {
                     recognition.start();
@@ -458,7 +487,7 @@
         };
 
         recognition.onerror = (event) => {
-            if (event.error === 'no-speech') return; // Normal timeout
+            if (event.error === 'no-speech') return;
             console.error('Speech recognition error:', event.error);
             if (event.error === 'not-allowed') {
                 setStatus('error', 'Microphone permission denied');
@@ -503,7 +532,6 @@
     // =========================================================================
     async function toggleMic() {
         if (isMicActive) {
-            // Stop
             if (isPipelineMode()) {
                 stopSpeechRecognition();
             } else {
@@ -513,7 +541,6 @@
             micBtn.classList.remove('active');
             setStatus('connected', 'Mic off');
         } else {
-            // Start
             try {
                 if (isPipelineMode()) {
                     startSpeechRecognition();
@@ -538,6 +565,8 @@
     function sendText() {
         const text = textInput.value.trim();
         if (!text || !ws || !isConnected) return;
+
+        if (isSpeaking) bargeIn();
 
         ws.send(JSON.stringify({ type: 'text.send', text: text }));
         addTranscript('user', text);
@@ -564,7 +593,7 @@
             providerSelect.value = config.provider;
             if (config.voice) voiceSelect.value = config.voice;
             currentMode = config.mode || 'pipeline';
-            providerBadge.textContent = config.provider === 'github' ? 'GitHub Models' : config.provider;
+            providerBadge.textContent = PROVIDER_LABELS[config.provider] || config.provider;
         })
         .catch(() => {});
 })();

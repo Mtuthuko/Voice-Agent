@@ -139,6 +139,12 @@ body {
     animation: pulse 0.8s infinite;
 }
 
+.status-indicator.thinking .status-dot {
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+    animation: thinking-pulse 0.6s infinite;
+}
+
 .status-indicator.error .status-dot {
     background: var(--danger);
 }
@@ -151,6 +157,11 @@ body {
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
+}
+
+@keyframes thinking-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.7); }
 }
 
 /* Visualizer */
@@ -191,10 +202,21 @@ body {
     box-shadow: 0 0 20px var(--accent-glow), 0 0 60px rgba(108, 99, 255, 0.1);
 }
 
+.avatar-ring.thinking {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(108, 99, 255, 0.1);
+    animation: thinking-ring 1s infinite;
+}
+
 .avatar-ring.speaking {
     border-color: var(--warning);
     box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
     animation: avatar-pulse 1s infinite;
+}
+
+@keyframes thinking-ring {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.04); opacity: 0.7; }
 }
 
 @keyframes avatar-pulse {

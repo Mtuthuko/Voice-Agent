@@ -88,6 +88,10 @@ class SessionManager:
                         if hasattr(self.provider, "commit_audio"):
                             await self.provider.commit_audio()
 
+                    elif msg_type == "interrupt":
+                        logger.info("Client requested barge-in interrupt")
+                        await self.provider.interrupt()
+
                     elif msg_type == "session.update":
                         logger.info(f"Session update: {message.get('data', {})}")
 
