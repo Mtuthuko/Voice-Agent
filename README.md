@@ -1,101 +1,110 @@
 # Atlas - Conversational Voice Agent
 
-A production-ready conversational voice AI agent built with **FastAPI**, **GitHub Models** (free GPT-4o), **Edge-TTS**, **OpenAI Realtime API**, and **ElevenLabs**. Features real-time voice conversation, tool calling, and a web-based interface with live audio visualization.
+A production-ready conversational voice AI agent powered by **open-source models** (Llama 3.3 70B via Groq) with **streaming LLM + sentence-chunked TTS** for natural, low-latency conversation. Built with FastAPI, WebSockets, and a real-time browser interface.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white)
-![GitHub Models](https://img.shields.io/badge/GitHub_Models-GPT--4o_Free-181717?logo=github&logoColor=white)
-![OpenAI](https://img.shields.io/badge/OpenAI-Realtime_API-412991?logo=openai&logoColor=white)
-![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Conversational_AI-000000)
+![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-f55036?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHRleHQgeT0iMjAiIGZvbnQtc2l6ZT0iMjAiPuKaqTwvdGV4dD48L3N2Zz4=&logoColor=white)
+![Open Source](https://img.shields.io/badge/LLM-Open_Source-brightgreen)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-22_passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-green)
+
+## Why This Project
+
+Most voice AI demos feel robotic — they wait for the full LLM response before speaking. Atlas uses **streaming inference + sentence-chunked TTS** to start speaking within ~500ms of the first complete sentence, creating a natural conversational flow similar to true speech-to-speech models.
+
+**Key differentiators:**
+- **Fully free** — runs on Groq's free API with open-source Llama 3.3 70B
+- **Low latency** — streaming architecture, not batch-and-wait
+- **Barge-in support** — interrupt the agent mid-sentence by speaking
+- **4 provider backends** — swap between Groq, GitHub Models, OpenAI Realtime, or ElevenLabs
+- **Extensible tools** — decorator-based tool registry with OpenAI function calling
 
 ## Architecture
 
-The system supports two modes: **Pipeline** (free) and **Realtime** (paid API keys).
-
 ```
-                     Browser Client
-                    (Audio + WebSocket)
-                          |
-                    ┌─────┴─────┐
-                    │  FastAPI   │
-                    │  Server    │
-                    │            │
-                    │ WebSocket  │
-                    │  Handler   │
-                    └─────┬─────┘
-                          |
-                 ┌────────┴────────┐
-                 │ Session Manager  │
-                 │                  │
-                 │  ┌────────────┐  │
-                 │  │ Tool       │  │
-                 │  │ Registry   │  │
-                 │  └────────────┘  │
-                 └────────┬────────┘
-                          |
-          ┌───────────────┼───────────────┐
-          |               |               |
-┌─────────┴────────┐ ┌───┴────────┐ ┌────┴──────────┐
-│  GitHub Models    │ │  OpenAI    │ │  ElevenLabs   │
-│  (FREE)           │ │  Realtime  │ │  Provider     │
-│                   │ │  Provider  │ │               │
-│  Browser STT ──►  │ │            │ │               │
-│  GitHub GPT-4o ►  │ │ Voice-to-  │ │ Ultra-low     │
-│  Edge-TTS ──►     │ │ Voice      │ │ latency TTS   │
-│  Audio playback   │ │ Server VAD │ │ Conversational│
-│                   │ │ Tool calls │ │ AI            │
-└───────────────────┘ └────────────┘ └───────────────┘
+                        Browser Client
+                   ┌─────────────────────┐
+                   │  Web Speech API      │ ◄── STT (client-side)
+                   │  Audio Visualizer    │
+                   │  MP3/PCM Playback    │
+                   └──────────┬──────────┘
+                              │ WebSocket
+                   ┌──────────┴──────────┐
+                   │     FastAPI Server    │
+                   │                      │
+                   │  Session Manager     │
+                   │  Tool Executor       │
+                   │  Security Middleware  │
+                   │  Correlation Tracing  │
+                   └──────────┬──────────┘
+                              │
+        ┌─────────┬───────────┼───────────┬─────────────┐
+        │         │           │           │             │
+   ┌────┴───┐ ┌───┴────┐ ┌───┴────┐ ┌────┴──────┐      │
+   │  Groq  │ │ GitHub │ │ OpenAI │ │ ElevenLabs│  ┌───┴────┐
+   │ Llama  │ │ Models │ │Realtime│ │ Provider  │  │Edge-TTS│
+   │ 3.3 70B│ │ GPT-4o │ │  API   │ │           │  │ (free) │
+   │ (free) │ │ (free) │ │ (paid) │ │  (paid)   │  └────────┘
+   └────────┘ └────────┘ └────────┘ └───────────┘
+       ▲ default
 ```
 
-### Pipeline Mode (GitHub Models - Free)
+### Streaming Pipeline (Groq / GitHub Models)
 
 ```
-User speaks → Browser Web Speech API (STT) → text → WebSocket →
-→ GitHub Models API (GPT-4o) → response text → Edge-TTS (free) →
-→ MP3 audio → WebSocket → Browser playback
+User speaks → Browser STT → text → WebSocket →
+→ LLM (streaming) → sentence chunks → Edge-TTS (per sentence) →
+→ MP3 audio → WebSocket → Browser playback (starts in ~500ms)
 ```
+
+The LLM response streams token-by-token. As each sentence completes, it's immediately sent to Edge-TTS for synthesis. Audio playback begins while remaining sentences are still generating — eliminating the "batch-and-wait" feel of traditional pipelines.
 
 ### Realtime Mode (OpenAI / ElevenLabs)
 
 ```
 User speaks → PCM16 audio → WebSocket →
-→ Provider (STT + LLM + TTS in one stream) →
-→ PCM16 audio → WebSocket → Browser playback
+→ Provider (STT + LLM + TTS) →
+→ PCM16/audio → WebSocket → Browser playback
 ```
 
 ## Features
 
-- **Three Provider Support** - GitHub Models (free), OpenAI Realtime API, or ElevenLabs
-- **Zero-Cost Voice AI** - Full voice agent with just a free GitHub token (no paid API keys required)
-- **Tool Calling** - Extensible tool system with built-in weather, calculator, datetime, and knowledge lookup
-- **Web Interface** - Browser-based client with real-time audio waveform visualization
-- **Dual Audio Modes** - MP3 streaming (pipeline) or PCM16 raw audio (realtime)
-- **Browser STT** - Client-side speech recognition via Web Speech API (pipeline mode)
-- **Edge-TTS** - Free, high-quality text-to-speech with 6+ voice options
-- **Text Fallback** - Type messages when voice isn't available
-- **Conversation Memory** - Full conversation state tracking per session
-- **Provider Abstraction** - Clean interface pattern for adding new voice providers
-- **Docker Ready** - One-command deployment with Docker Compose
+| Category | Feature | Details |
+|----------|---------|---------|
+| **LLM** | 4 providers | Groq (Llama 3.3, free), GitHub Models (GPT-4o, free), OpenAI Realtime, ElevenLabs |
+| **Streaming** | Sentence-chunked TTS | Audio starts in ~500ms, not 2-3s |
+| **Conversation** | Barge-in | Interrupt the agent by speaking or typing |
+| **Conversation** | Turn detection | Server VAD (realtime) or client-side (pipeline) |
+| **Tools** | Function calling | Weather, calculator, datetime, knowledge lookup |
+| **Audio** | Dual format | MP3 streaming (pipeline) or PCM16 raw (realtime) |
+| **Audio** | 6+ voices | Edge-TTS voices including US, UK, South African English |
+| **UI** | Live visualization | Real-time audio waveform canvas |
+| **UI** | Thinking indicator | Visual feedback during LLM inference |
+| **Security** | OWASP headers | X-Content-Type-Options, X-Frame-Options, CSP |
+| **Security** | Correlation IDs | Distributed tracing across requests |
+| **Ops** | Health probes | `/api/health` (liveness) and `/api/ready` (readiness) |
+| **Ops** | Docker | Multi-stage build, non-root user, healthcheck |
 
 ## Built-in Tools
 
-| Tool | Description |
-|------|-------------|
-| `get_weather` | Live weather data via Open-Meteo (no API key needed) |
-| `calculate` | Safe math expression evaluation |
-| `get_datetime` | Current UTC date and time |
-| `lookup_knowledge` | Knowledge base search (extensible to vector DB) |
+| Tool | Description | API |
+|------|-------------|-----|
+| `get_weather` | Real-time weather for any city | Open-Meteo (free, no key) |
+| `calculate` | Safe math evaluation (trig, log, etc.) | Built-in |
+| `get_datetime` | Current UTC date and time | Built-in |
+| `lookup_knowledge` | Knowledge base search | Extensible to vector DB |
 
 ## Quick Start
 
 ### Prerequisites
 
 - Python 3.10+
-- A [GitHub Personal Access Token](https://github.com/settings/tokens) (free!) with `models:read` permission
+- A free [Groq API key](https://console.groq.com/keys) (recommended)
+- _or_ a [GitHub PAT](https://github.com/settings/tokens) with `models:read` scope
 
-> **No paid API keys needed!** The default GitHub Models provider gives you free access to GPT-4o and Edge-TTS provides free text-to-speech.
+> **No paid API keys needed.** Groq provides free access to Llama 3.3 70B and Edge-TTS handles speech synthesis for free.
 
 ### Installation
 
@@ -106,21 +115,21 @@ cd Voice-Agent
 
 # Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env → set GITHUB_TOKEN=ghp_your-token-here
+# Edit .env → set GROQ_API_KEY=gsk_your-key-here
 ```
 
-### Get a GitHub Token
+### Get a Groq API Key (Free)
 
-1. Go to [GitHub Settings → Developer Settings → Personal Access Tokens → Fine-grained tokens](https://github.com/settings/personal-access-tokens/new)
-2. Create a token with **"Models: Read"** permission
-3. Copy the token into your `.env` file as `GITHUB_TOKEN`
+1. Go to [console.groq.com/keys](https://console.groq.com/keys)
+2. Create a free account and generate an API key
+3. Copy the key into your `.env` file as `GROQ_API_KEY`
 
 ### Run
 
@@ -137,85 +146,78 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 ### Docker
 
 ```bash
-# Build and run
 docker compose up --build
-
-# Or run in background
-docker compose up -d
 ```
 
 ## Usage
 
-1. **Connect** - Click "Connect" to establish a WebSocket session
-2. **Speak** - Click the microphone button and start talking. In pipeline mode, your browser transcribes your speech automatically
-3. **Listen** - The agent responds with natural speech via Edge-TTS. Watch the audio visualizer react to the conversation
-4. **Tools** - Ask about the weather, do math, or look up information. The agent calls the appropriate tool and relays results naturally
-5. **Text** - Type a message as a fallback when voice isn't available
+1. **Connect** — Click "Connect" to establish a WebSocket session
+2. **Speak** — Click the mic button. Your browser transcribes speech in real-time
+3. **Listen** — Atlas responds with natural streaming speech. Watch the waveform visualizer react
+4. **Interrupt** — Start talking while Atlas speaks to barge in and redirect the conversation
+5. **Tools** — Ask "What's the weather in Cape Town?" or "What's the square root of 144?"
+6. **Type** — Use the text input as a fallback when voice isn't available
 
 ### Voice Options (Edge-TTS)
 
-| Voice | Description |
-|-------|-------------|
-| `en-US-AndrewMultilingualNeural` | Andrew - American English (default) |
-| `en-US-AvaMultilingualNeural` | Ava - American English |
-| `en-US-BrianMultilingualNeural` | Brian - American English |
-| `en-US-EmmaMultilingualNeural` | Emma - American English |
-| `en-GB-SoniaNeural` | Sonia - British English |
-| `en-ZA-LeahNeural` | Leah - South African English |
+| Voice | Accent |
+|-------|--------|
+| `en-US-AndrewMultilingualNeural` | American English (default) |
+| `en-US-AvaMultilingualNeural` | American English |
+| `en-US-BrianMultilingualNeural` | American English |
+| `en-US-EmmaMultilingualNeural` | American English |
+| `en-GB-SoniaNeural` | British English |
+| `en-ZA-LeahNeural` | South African English |
 
 ## Project Structure
 
 ```
 Voice-Agent/
 ├── app/
-│   ├── api/
-│   │   └── routes.py              # HTTP + WebSocket endpoints
+│   ├── api/routes.py              # HTTP + WebSocket endpoints
 │   ├── core/
-│   │   ├── config.py              # Pydantic settings management
-│   │   └── logging.py             # Structured logging
-│   ├── models/
-│   │   └── schemas.py             # Pydantic models
+│   │   ├── config.py              # Pydantic settings (env vars)
+│   │   ├── logging.py             # Structured logging + correlation IDs
+│   │   └── middleware.py          # Security headers, request tracing
+│   ├── models/schemas.py          # Pydantic data models
 │   ├── providers/
 │   │   ├── base.py                # Abstract provider interface
-│   │   ├── github_models.py       # GitHub Models + Edge-TTS pipeline
-│   │   ├── openai_realtime.py     # OpenAI Realtime API integration
-│   │   ├── elevenlabs_provider.py # ElevenLabs integration
-│   │   └── factory.py             # Provider factory
+│   │   ├── factory.py             # Provider factory
+│   │   ├── groq_provider.py       # Groq: Llama 3.3 + streaming + Edge-TTS
+│   │   ├── github_models.py       # GitHub Models: GPT-4o + Edge-TTS
+│   │   ├── openai_realtime.py     # OpenAI Realtime API (WebSocket S2S)
+│   │   └── elevenlabs_provider.py # ElevenLabs Conversational AI
 │   ├── services/
-│   │   └── session_manager.py     # Session orchestration + tool execution
-│   ├── tools/
-│   │   ├── registry.py            # Tool registration system
-│   │   └── built_in.py            # Built-in tool implementations
-│   └── main.py                    # FastAPI application
+│   │   └── session_manager.py     # Session lifecycle + tool execution
+│   └── tools/
+│       ├── registry.py            # Decorator-based tool registry
+│       └── built_in.py            # Weather, calculator, datetime, knowledge
 ├── frontend/
 │   ├── static/
-│   │   ├── css/styles.css         # UI styles
+│   │   ├── css/styles.css         # Dark theme UI
 │   │   └── js/
-│   │       ├── app.js             # Main controller (pipeline + realtime)
+│   │       ├── app.js             # Main controller + barge-in logic
 │   │       ├── audio-processor.js # Mic capture + PCM16 conversion
-│   │       └── visualizer.js      # Real-time audio visualization
-│   └── templates/
-│       └── index.html             # Web interface
+│   │       └── visualizer.js      # Real-time audio waveform
+│   └── templates/index.html       # Web interface
 ├── tests/
-│   ├── test_api.py                # API endpoint tests
-│   └── test_tools.py              # Tool system tests
+│   ├── test_api.py                # 12 API + integration tests
+│   └── test_tools.py              # 10 tool system tests
+├── Dockerfile                     # Multi-stage build, non-root user
 ├── docker-compose.yml
-├── Dockerfile
-├── pyproject.toml
+├── pyproject.toml                 # Project metadata + tool config
 ├── requirements.txt
-└── run.py
+└── CONTRIBUTING.md                # Developer guide
 ```
 
 ## Adding Custom Tools
-
-Extend the agent with new capabilities by registering tools:
 
 ```python
 from app.tools.registry import registry
 
 @registry.register(
-    name="search_database",
-    description="Search the product database by query",
+    name="search_docs",
+    description="Search the documentation by query",
     parameters={
         "type": "object",
         "properties": {
@@ -225,55 +227,73 @@ from app.tools.registry import registry
         "required": ["query"],
     },
 )
-async def search_database(query: str, limit: int = 5) -> str:
-    # Your implementation here
+async def search_docs(query: str, limit: int = 5) -> str:
     results = await db.search(query, limit=limit)
     return json.dumps({"results": results})
 ```
 
-Tools are automatically available to the voice agent and generate OpenAI-compatible function calling schemas.
+Tools auto-register and generate OpenAI-compatible function calling schemas. All providers that support function calling will use them automatically.
 
 ## Configuration
 
-All settings are managed via environment variables (see `.env.example`):
+All settings via environment variables (see `.env.example`):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VOICE_PROVIDER` | `github` | Provider: `github`, `openai`, or `elevenlabs` |
-| `GITHUB_TOKEN` | - | GitHub PAT with `models:read` permission (free) |
-| `GITHUB_MODEL` | `openai/gpt-4o` | GitHub Models model ID |
-| `GITHUB_TTS_VOICE` | `en-US-AndrewMultilingualNeural` | Edge-TTS voice |
-| `OPENAI_API_KEY` | - | OpenAI API key (for realtime mode) |
-| `OPENAI_REALTIME_MODEL` | `gpt-4o-realtime-preview` | OpenAI model |
-| `OPENAI_VOICE` | `alloy` | OpenAI voice |
+| `VOICE_PROVIDER` | `groq` | `groq`, `github`, `openai`, or `elevenlabs` |
+| `GROQ_API_KEY` | - | Free Groq API key |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Open-source model on Groq |
+| `GITHUB_TOKEN` | - | GitHub PAT with `models:read` |
+| `OPENAI_API_KEY` | - | OpenAI API key (realtime mode) |
 | `ELEVENLABS_API_KEY` | - | ElevenLabs API key |
 | `AGENT_NAME` | `Atlas` | Agent display name |
-| `AGENT_PERSONA` | (see .env.example) | System prompt / persona |
-| `APP_PORT` | `8000` | Server port |
+| `APP_ENV` | `development` | `development`, `staging`, `production` |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warning`, `error` |
+| `ALLOWED_ORIGINS` | `*` | CORS origins (comma-separated) |
+
+### Available Groq Models
+
+| Model | Speed | Quality | Use Case |
+|-------|-------|---------|----------|
+| `llama-3.3-70b-versatile` | Fast | Best | Default, general purpose |
+| `llama-3.1-8b-instant` | Ultra-fast | Good | Low-latency responses |
+| `deepseek-r1-distill-llama-70b` | Fast | Best | Complex reasoning |
+| `mixtral-8x7b-32768` | Fast | Great | Long context |
+| `gemma2-9b-it` | Ultra-fast | Good | Lightweight |
 
 ## Testing
 
 ```bash
-# Install dev dependencies
-pip install -e ".[dev]"
-
-# Run tests
+# Run all tests
 pytest
 
-# Run with coverage
+# With verbose output
+pytest -v
+
+# With coverage
 pytest --cov=app --cov-report=term-missing
 ```
 
 ## Tech Stack
 
-- **Backend**: Python, FastAPI, WebSockets, Pydantic
-- **LLM**: GitHub Models (free GPT-4o), OpenAI Realtime API
-- **TTS**: Edge-TTS (free), OpenAI TTS, ElevenLabs
-- **STT**: Web Speech API (browser, free), OpenAI Whisper
-- **Audio**: PCM16/MP3 streaming, Web Audio API
-- **Frontend**: Vanilla JS, Canvas API (audio visualization)
-- **Infrastructure**: Docker, Docker Compose, uvicorn
+| Layer | Technology |
+|-------|------------|
+| **Backend** | Python 3.11, FastAPI, WebSockets, Pydantic v2 |
+| **LLM** | Groq (Llama 3.3 70B), GitHub Models (GPT-4o), OpenAI Realtime |
+| **TTS** | Edge-TTS (free, 30+ voices), OpenAI TTS, ElevenLabs |
+| **STT** | Web Speech API (browser-native, free) |
+| **Audio** | PCM16/MP3 streaming, Web Audio API, AudioContext |
+| **Frontend** | Vanilla JS, Canvas API (waveform visualization) |
+| **Security** | OWASP headers, correlation IDs, input validation |
+| **Infrastructure** | Docker (multi-stage), Docker Compose, uvicorn |
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+## Author
+
+**Mtuthuko Mngomezulu** — Full-Stack Generative AI Engineer
+
+- GitHub: [@Mtuthuko](https://github.com/Mtuthuko)
+- Email: mngomezuluntuthuko@gmail.com
