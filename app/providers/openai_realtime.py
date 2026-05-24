@@ -66,8 +66,8 @@ class OpenAIRealtimeProvider(VoiceProviderBase):
                 "turn_detection": {
                     "type": "server_vad",
                     "threshold": settings.turn_detection_threshold,
-                    "prefix_padding_ms": 300,
-                    "silence_duration_ms": 500,
+                    "prefix_padding_ms": 400,
+                    "silence_duration_ms": 800,
                 } if config.turn_detection else None,
                 "tools": registry.get_realtime_schemas() if config.tools_enabled else [],
                 "tool_choice": "auto",

@@ -70,7 +70,7 @@ class Settings(BaseSettings):
         "and answering questions. When using tools, relay the results naturally."
     )
     max_conversation_turns: int = Field(default=50, ge=1, le=500)
-    turn_detection_threshold: float = Field(default=0.5, ge=0.0, le=1.0)
+    turn_detection_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
 
     @computed_field  # type: ignore[prop-decorator]
     @property

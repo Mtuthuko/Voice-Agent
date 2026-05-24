@@ -439,6 +439,9 @@
 
         let finalTranscript = '';
         let silenceTimer = null;
+        const MIN_CONFIDENCE = 0.75;
+        const MIN_WORDS = 2;
+        const SILENCE_MS = 1000;
 
         recognition.onresult = (event) => {
             let interim = '';
@@ -447,14 +450,16 @@
             for (let i = 0; i < event.results.length; i++) {
                 const result = event.results[i];
                 if (result.isFinal) {
-                    finalTranscript += result[0].transcript;
+                    if (result[0].confidence >= MIN_CONFIDENCE) {
+                        finalTranscript += result[0].transcript;
+                    }
                 } else {
                     interim += result[0].transcript;
                 }
             }
 
-            // Barge-in: if user is speaking while agent talks, interrupt
-            if ((interim || finalTranscript) && isSpeaking) {
+            // Barge-in: only interrupt if we have a confident final result
+            if (finalTranscript && finalTranscript.trim().split(/\s+/).length >= MIN_WORDS && isSpeaking) {
                 bargeIn();
             }
 
@@ -465,14 +470,14 @@
             if (finalTranscript) {
                 clearTimeout(silenceTimer);
                 silenceTimer = setTimeout(() => {
-                    if (finalTranscript.trim() && ws && isConnected) {
-                        const text = finalTranscript.trim();
+                    const text = finalTranscript.trim();
+                    if (text && text.split(/\s+/).length >= MIN_WORDS && ws && isConnected) {
                         addTranscript('user', text);
                         ws.send(JSON.stringify({ type: 'text.send', text: text }));
                         setStatus('connected', 'Processing...');
                         finalTranscript = '';
                     }
-                }, 500);
+                }, SILENCE_MS);
             }
         };
 
