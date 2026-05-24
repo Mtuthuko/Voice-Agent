@@ -34,9 +34,11 @@ class ToolDefinition:
     def to_openai_schema(self) -> dict[str, Any]:
         return {
             "type": "function",
-            "name": self.name,
-            "description": self.description,
-            "parameters": self.parameters,
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.parameters,
+            },
         }
 
 
@@ -76,6 +78,18 @@ class ToolRegistry:
 
     def get_openai_schemas(self) -> list[dict[str, Any]]:
         return [tool.to_openai_schema() for tool in self._tools.values()]
+
+    def get_realtime_schemas(self) -> list[dict[str, Any]]:
+        """Flat format for the OpenAI Realtime API (no 'function' wrapper)."""
+        return [
+            {
+                "type": "function",
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": tool.parameters,
+            }
+            for tool in self._tools.values()
+        ]
 
     def list_tools(self) -> list[str]:
         return list(self._tools.keys())

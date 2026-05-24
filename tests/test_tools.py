@@ -22,9 +22,10 @@ class TestToolRegistry:
         assert len(schemas) >= 4
         for schema in schemas:
             assert schema["type"] == "function"
-            assert "name" in schema
-            assert "description" in schema
-            assert "parameters" in schema
+            assert "function" in schema
+            assert "name" in schema["function"]
+            assert "description" in schema["function"]
+            assert "parameters" in schema["function"]
 
     def test_register_custom_tool(self):
         custom_registry = ToolRegistry()

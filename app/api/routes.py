@@ -29,6 +29,14 @@ async def health_check() -> JSONResponse:
     })
 
 
+def _has_real_key(value: str) -> bool:
+    """Check if an API key is set to a real value (not a placeholder)."""
+    if not value:
+        return False
+    placeholders = {"your-", "ghp_your", "sk-your", "gsk_your"}
+    return not any(p in value for p in placeholders)
+
+
 @router.get("/api/ready")
 async def readiness_check() -> JSONResponse:
     """Readiness probe: confirms the service can accept requests."""
@@ -36,16 +44,16 @@ async def readiness_check() -> JSONResponse:
     ready = True
     reason = "ok"
 
-    if provider == "groq" and not settings.groq_api_key:
+    if provider == "groq" and not _has_real_key(settings.groq_api_key):
         ready = False
         reason = "GROQ_API_KEY not configured"
-    elif provider == "github" and not settings.github_token:
+    elif provider == "github" and not _has_real_key(settings.github_token):
         ready = False
         reason = "GITHUB_TOKEN not configured"
-    elif provider == "openai" and not settings.openai_api_key:
+    elif provider == "openai" and not _has_real_key(settings.openai_api_key):
         ready = False
         reason = "OPENAI_API_KEY not configured"
-    elif provider == "elevenlabs" and not settings.elevenlabs_api_key:
+    elif provider == "elevenlabs" and not _has_real_key(settings.elevenlabs_api_key):
         ready = False
         reason = "ELEVENLABS_API_KEY not configured"
 
@@ -90,9 +98,16 @@ async def voice_websocket(websocket: WebSocket) -> None:
 
     try:
         init_data = await websocket.receive_json()
+        provider_val = init_data.get("provider", settings.voice_provider.value)
+        default_voice = (
+            settings.groq_tts_voice if provider_val == "groq"
+            else settings.github_tts_voice if provider_val == "github"
+            else settings.openai_voice if provider_val == "openai"
+            else settings.elevenlabs_voice_id
+        )
         config = SessionConfig(
-            provider=init_data.get("provider", settings.voice_provider.value),
-            voice=init_data.get("voice", settings.openai_voice),
+            provider=provider_val,
+            voice=init_data.get("voice", default_voice),
             system_prompt=init_data.get("system_prompt", ""),
             tools_enabled=init_data.get("tools_enabled", True),
             turn_detection=init_data.get("turn_detection", True),
