@@ -69,7 +69,7 @@ class OpenAIRealtimeProvider(VoiceProviderBase):
                     "prefix_padding_ms": 300,
                     "silence_duration_ms": 500,
                 } if config.turn_detection else None,
-                "tools": registry.get_openai_schemas() if config.tools_enabled else [],
+                "tools": registry.get_realtime_schemas() if config.tools_enabled else [],
                 "tool_choice": "auto",
                 "temperature": 0.7,
             },
