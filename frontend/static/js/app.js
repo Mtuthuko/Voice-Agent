@@ -23,6 +23,7 @@
     const providerSelect = document.getElementById('providerSelect');
     const voiceSelect = document.getElementById('voiceSelect');
     const toolsToggle = document.getElementById('toolsToggle');
+    const pttToggle = document.getElementById('pttToggle');
 
     // --- State ---
     let ws = null;
@@ -425,6 +426,10 @@
     // =========================================================================
     // Pipeline Mode: Web Speech API (STT)
     // =========================================================================
+    function isPushToTalk() {
+        return pttToggle.checked;
+    }
+
     function startSpeechRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -433,15 +438,15 @@
         }
 
         recognition = new SpeechRecognition();
-        recognition.continuous = true;
+        recognition.continuous = !isPushToTalk();
         recognition.interimResults = true;
         recognition.lang = 'en-US';
 
         let finalTranscript = '';
         let silenceTimer = null;
         const MIN_CONFIDENCE = 0.75;
-        const MIN_WORDS = 2;
-        const SILENCE_MS = 1000;
+        const MIN_WORDS = isPushToTalk() ? 1 : 2;
+        const SILENCE_MS = isPushToTalk() ? 600 : 1000;
 
         recognition.onresult = (event) => {
             let interim = '';
@@ -450,7 +455,7 @@
             for (let i = 0; i < event.results.length; i++) {
                 const result = event.results[i];
                 if (result.isFinal) {
-                    if (result[0].confidence >= MIN_CONFIDENCE) {
+                    if (result[0].confidence >= MIN_CONFIDENCE || isPushToTalk()) {
                         finalTranscript += result[0].transcript;
                     }
                 } else {
@@ -458,8 +463,7 @@
                 }
             }
 
-            // Barge-in: only interrupt if we have a confident final result
-            if (finalTranscript && finalTranscript.trim().split(/\s+/).length >= MIN_WORDS && isSpeaking) {
+            if (!isPushToTalk() && finalTranscript && finalTranscript.trim().split(/\s+/).length >= MIN_WORDS && isSpeaking) {
                 bargeIn();
             }
 
@@ -482,7 +486,19 @@
         };
 
         recognition.onend = () => {
-            if (isMicActive && isConnected) {
+            if (isPushToTalk()) {
+                // In PTT mode, send whatever we have when recognition ends
+                if (finalTranscript && finalTranscript.trim() && ws && isConnected) {
+                    const text = finalTranscript.trim();
+                    addTranscript('user', text);
+                    ws.send(JSON.stringify({ type: 'text.send', text: text }));
+                    setStatus('connected', 'Processing...');
+                    finalTranscript = '';
+                }
+                isMicActive = false;
+                micBtn.classList.remove('active');
+                setStatus('connected', 'Ready');
+            } else if (isMicActive && isConnected) {
                 try {
                     recognition.start();
                 } catch (e) {
@@ -492,7 +508,14 @@
         };
 
         recognition.onerror = (event) => {
-            if (event.error === 'no-speech') return;
+            if (event.error === 'no-speech') {
+                if (isPushToTalk()) {
+                    isMicActive = false;
+                    micBtn.classList.remove('active');
+                    setStatus('connected', 'Ready');
+                }
+                return;
+            }
             console.error('Speech recognition error:', event.error);
             if (event.error === 'not-allowed') {
                 setStatus('error', 'Microphone permission denied');
@@ -544,7 +567,7 @@
             }
             isMicActive = false;
             micBtn.classList.remove('active');
-            setStatus('connected', 'Mic off');
+            setStatus('connected', isPushToTalk() ? 'Ready' : 'Mic off');
         } else {
             try {
                 if (isPipelineMode()) {
@@ -580,11 +603,60 @@
     }
 
     // =========================================================================
+    // Push-to-Talk: Hold mic button to record, release to send
+    // =========================================================================
+    let pttActive = false;
+
+    function pttStart(e) {
+        if (!isPushToTalk() || !isConnected || pttActive) return;
+        e.preventDefault();
+        pttActive = true;
+        micBtn.classList.add('active', 'ptt-held');
+        setStatus('listening', 'Listening... (release to send)');
+        setAvatar('active');
+        startSpeechRecognition();
+    }
+
+    function pttStop(e) {
+        if (!pttActive) return;
+        e.preventDefault();
+        pttActive = false;
+        micBtn.classList.remove('ptt-held');
+        stopSpeechRecognition();
+    }
+
+    micBtn.addEventListener('mousedown', (e) => {
+        if (isPushToTalk() && isConnected) { pttStart(e); return; }
+    });
+    micBtn.addEventListener('mouseup', pttStop);
+    micBtn.addEventListener('mouseleave', pttStop);
+    micBtn.addEventListener('touchstart', (e) => {
+        if (isPushToTalk() && isConnected) { pttStart(e); return; }
+    });
+    micBtn.addEventListener('touchend', pttStop);
+    micBtn.addEventListener('touchcancel', pttStop);
+
+    // Spacebar hold-to-talk when text input is not focused
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && e.target !== textInput && isPushToTalk() && isConnected && !pttActive) {
+            pttStart(e);
+        }
+    });
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'Space' && pttActive) {
+            pttStop(e);
+        }
+    });
+
+    // =========================================================================
     // Event Listeners
     // =========================================================================
     connectBtn.addEventListener('click', connect);
     disconnectBtn.addEventListener('click', disconnect);
-    micBtn.addEventListener('click', toggleMic);
+    micBtn.addEventListener('click', (e) => {
+        if (isPushToTalk()) return; // PTT uses mousedown/mouseup instead
+        toggleMic();
+    });
     sendTextBtn.addEventListener('click', sendText);
 
     textInput.addEventListener('keydown', (e) => {
