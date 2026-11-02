@@ -31,6 +31,7 @@
   var textInput = $('textInput');
   var sendTextBtn = $('sendTextBtn');
   var transcript = $('transcriptContainer');
+  var placeholder = $('transcriptPlaceholder');
   var voiceSelect = $('voiceSelect');
   var providerSelect = $('providerSelect');
   var consoleEl = $('console');
@@ -57,7 +58,7 @@
     character: 'sunbird',
     look: 'rich',
     finish: 'satin',
-    size: 50,
+    size: 58,                   // phones get about 46 through mobileScale
     side: 'right',
     lane: null,                 // set from computeLane() at every init
     perch: '[data-perch]',
@@ -65,7 +66,7 @@
     colorsOnDark: { primary: '#FF8A3D', secondary: '#45D6A0', accent: '#A58BFF', dark: '#6B5884', light: '#FFF4EA' },
     // Over the orange and lilac bands: a velvet-plum bird that reads on both
     colors: { primary: '#2A1B38', secondary: '#0F5E45', accent: '#4B2FC0', dark: '#120D18', light: '#FFF4EA' },
-    dust: { colors: ['#FFD39A', '#FF8A3D', '#C6B3FF'], amount: 0.32, ambient: true, trail: true },
+    dust: { colors: ['#FFD39A', '#FF8A3D', '#C6B3FF'], amount: 0.45, ambient: true, trail: true },
     ghost: false,
     calm: false,
     intro: true,
@@ -85,16 +86,19 @@
 
   var call = 'idle';              // mirrors html[data-call]
   var laneNow = null;
-  var leaveTimer = 0, returnTimer = 0, flushTimer = 0, flashTimer = 0, resizeTimer = 0;
+  var leaveTimer = 0, returnTimer = 0, flushTimer = 0, resizeTimer = 0;
   var pendingAsk = null;
+  var pendingProvider = null;     // a provider switch "Use Leah's voice" needs, applied when the call ends
 
   // Cruise in the right page gutter when it is wide enough; otherwise beside the H1.
+  // On phones the lane sits level with the short first line ("Atlas"), clear of the
+  // longer lines below it.
   function computeLane() {
     var vw = window.innerWidth;
     var gutter = vw - consoleEl.getBoundingClientRect().right;
     return gutter >= 88
       ? { mode: 'gutter', lane: { x: +((vw - gutter / 2) / vw).toFixed(3), y: 0.36 } }
-      : { mode: 'top', lane: { x: 0.86, y: 0.16 } };
+      : { mode: 'top', lane: { x: 0.86, y: vw < 700 ? 0.11 : 0.16 } };
   }
 
   // Dock the kit's pause button in the top bar (the kit keeps its own reference).
@@ -180,9 +184,11 @@
     clearTimeout(returnTimer); returnTimer = 0;
 
     // The success moment: a loop and a sparkle as a send-off, then the bird
-    // fades and is destroyed before any audio can play.
+    // fades and is destroyed before any audio can play. When a question is on
+    // its way (chip, "Ask this", Enter) it is sent within ~100 ms, so the bird
+    // leaves at once instead: it never shares the screen with Thinking or Speaking.
     var ll = window.__livingLayer;
-    if (ll && ll.isEnabled() && !reduce.matches) {
+    if (ll && ll.isEnabled() && !reduce.matches && pendingAsk == null) {
       try { ll.celebrate(); } catch (e) { /* not started yet */ }
       root.classList.add('ll-leaving');
       clearTimeout(leaveTimer);
@@ -207,6 +213,15 @@
     // An ask that never got a call is dropped; its text stays in the input.
     pendingAsk = null;
     clearTimeout(flushTimer); flushTimer = 0;
+
+    // "Use Leah's voice" was pressed during a realtime call: switch the provider now that
+    // nothing reads it (only if Leah is still the chosen voice).
+    if (pendingProvider && providerSelect && voiceSelect && voiceSelect.value === 'en-ZA-LeahNeural') {
+      providerSelect.value = pendingProvider;
+      flash(providerSelect);
+    }
+    pendingProvider = null;
+
     if (prev !== 'live') return;            // a failed connect: the bird never left
 
     clearTimeout(leaveTimer); leaveTimer = 0;
@@ -236,6 +251,9 @@
     var prev = call;
     call = next;
     root.setAttribute('data-call', next);
+    // app.js reads the provider live during a call (to pick pipeline or realtime handling),
+    // so it is locked from Connect until the call ends. app.js only reads .value.
+    if (providerSelect) providerSelect.disabled = next !== 'idle';
     if (next === 'live') onLive();
     else if (next === 'idle') onIdle(prev);
   });
@@ -243,6 +261,8 @@
   var syncStatus = guard(function () {
     var s = (statusIndicator.className || '').replace('status-indicator', '').trim() || 'idle';
     if (root.getAttribute('data-status') !== s) root.setAttribute('data-status', s);
+    // A send-off still playing when the call gets busy (a fast typist): the bird goes now.
+    if (leaveTimer && (s === 'listening' || s === 'thinking' || s === 'speaking')) llStop();
     if (pendingAsk != null && call === 'live' && /session ready/i.test(statusText.textContent || '')) flush();
   });
 
@@ -257,7 +277,14 @@
     text = String(text || '').trim();
     if (!text) return;
     textInput.value = text;
-    if (call === 'live') { sendTextBtn.click(); return; }
+    if (call === 'live') {
+      sendTextBtn.click();
+      // A chip in the empty state was focused, and app.js has just hidden the empty state:
+      // keep focus where the talking happens instead of losing it to <body>.
+      var a = doc.activeElement;
+      if (!a || a === doc.body || (placeholder && placeholder.contains(a))) focusForCall();
+      return;
+    }
     pendingAsk = text;
     if (call === 'idle') connectBtn.click();
   }
@@ -299,19 +326,33 @@
     setTimeout(function () { srNote.textContent = message; }, 60);
   }
 
+  var flashTimers = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function flash(el) {
+    el.classList.add('flash');
+    if (flashTimers) clearTimeout(flashTimers.get(el));
+    var t = setTimeout(function () { el.classList.remove('flash'); }, 1200);
+    if (flashTimers) flashTimers.set(el, t);
+  }
+
   var leahBtn = $('useLeah');
   if (leahBtn && voiceSelect && providerSelect) {
     leahBtn.addEventListener('click', guard(function () {
+      var inCall = call !== 'idle';
+      // Leah is an Edge-TTS voice, so a realtime provider can't speak with her. But app.js
+      // reads the provider live during a call (isPipelineMode), so switching it mid-call
+      // would break that call: switch now only when idle, otherwise once the call ends.
+      // The voice is safe to set at any time: app.js reads it only when connecting.
+      var realtime = providerSelect.value === 'openai' || providerSelect.value === 'elevenlabs';
       voiceSelect.value = 'en-ZA-LeahNeural';
-      // Leah is an Edge-TTS voice, so a realtime provider can't speak with her.
-      if (providerSelect.value === 'openai' || providerSelect.value === 'elevenlabs') providerSelect.value = 'groq';
-      var live = call === 'live';
-      say(live ? 'Leah will be used the next time you connect.'
-               : 'Voice set to Leah, South African English. Press Connect to talk.');
-      voiceSelect.classList.add('flash');
-      clearTimeout(flashTimer);
-      flashTimer = setTimeout(function () { voiceSelect.classList.remove('flash'); }, 1200);
-      if (live) {
+      if (realtime && !inCall) providerSelect.value = 'groq';
+      pendingProvider = realtime && inCall ? 'groq' : null;
+      say(!inCall
+        ? (realtime ? 'Voice set to Leah, South African English, and the provider to Groq. Press Connect to talk.'
+                    : 'Voice set to Leah, South African English. Press Connect to talk.')
+        : (realtime ? 'Leah will be used the next time you connect. She needs Groq, so the provider switches to Groq when this call ends.'
+                    : 'Leah will be used the next time you connect.'));
+      flash(voiceSelect);
+      if (inCall) {
         voiceSelect.scrollIntoView({ block: 'nearest', behavior: behavior() });
         voiceSelect.focus({ preventScroll: true });
       } else {
@@ -388,7 +429,8 @@
     resizeTimer = setTimeout(guard(function () {
       if (call === 'live' || !window.__livingLayer) return;
       var next = computeLane();
-      if (!laneNow || next.mode !== laneNow.mode || Math.abs(next.lane.x - laneNow.lane.x) > 0.01) {
+      if (!laneNow || next.mode !== laneNow.mode || Math.abs(next.lane.x - laneNow.lane.x) > 0.01 ||
+          Math.abs(next.lane.y - laneNow.lane.y) > 0.01) {
         llStart({ intro: false, reveal: SEEN_ONLY });
       }
     }), 300);

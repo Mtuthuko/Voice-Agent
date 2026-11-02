@@ -19,6 +19,7 @@
   --hairline: #3E3049;  /* decorative separators only, never a control edge */
   --edge:     #7D6A90;  /* control boundaries (3:1 or better on every velvet) */
   --ripple:   #2E2338;  /* decorative contour strokes, never behind small text */
+  --field:    rgba(198, 179, 255, .2); /* the masthead's sound field: lilac at 20%, decoration only */
   --scroll-thumb: #4A3A58;
 
   /* Text */
@@ -83,20 +84,24 @@
   /* Motion */
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease-flow: cubic-bezier(.2, .7, .3, 1);
+  --ease-turn: cubic-bezier(.5, 0, .25, 1.38); /* the Turn: a slow start, then it swings about 4° past facing you and settles */
   --dur-fast: 150ms; --dur-state: 200ms; --dur-status: 220ms;
 
   /* Layout */
   --page: min(1280px, 100% - 2 * clamp(48px, 7vw, 120px));
   --topbar-h: 72px;
 
-  /* The voice well */
-  --ring-max: 176px; --ring-step: 19px; --ring-z: 22px; --core: 44px; --core-z: -140px;
+  /* The voice well. At rest it is lifted (--well-lift) so the core sits in the throat,
+     above the horizon line; it settles to centre as it turns to face you. */
+  --ring-max: 176px; --ring-step: 19px; --ring-z: 22px; --core: 44px; --core-z: -112px;
+  --well-lift: -24px;
   --stage-h: 236px; --voice-w: 240px; --voice-h: 184px; --horizon-h: 104px;
 }
 @media (max-width: 699px) {
   :root {
     --page: calc(100% - 32px); --topbar-h: 56px;
-    --ring-max: 148px; --ring-step: 16px; --ring-z: 18px; --core: 36px; --core-z: -116px;
+    --ring-max: 148px; --ring-step: 16px; --ring-z: 18px; --core: 36px; --core-z: -92px;
+    --well-lift: -20px;
     --stage-h: 196px; --voice-w: 200px; --voice-h: 156px; --horizon-h: 80px;
   }
 }
@@ -104,10 +109,11 @@
 @media (min-width: 1100px) and (max-height: 860px) {
   :root {
     --fs-d1: clamp(2.75rem, calc(1rem + 5.2vw), 4.5rem);
-    --ring-max: 150px; --ring-step: 16px; --ring-z: 19px; --core: 38px; --core-z: -120px;
+    --ring-max: 150px; --ring-step: 16px; --ring-z: 19px; --core: 38px; --core-z: -96px;
     --stage-h: 208px; --voice-w: 220px; --voice-h: 160px; --horizon-h: 96px;
   }
 }
+html[data-call="live"] { --well-lift: 0px; }
 
 /* --------------------------------------------------------------------------
    2. Base and browser surfaces
@@ -183,7 +189,7 @@ html:not([data-call="live"]) .when-live { display: none; }
   position: relative;
   z-index: 50;
   height: var(--topbar-h);
-  background: rgba(26, 19, 34, .94); /* --velvet-2 at 94%, no blur */
+  background: var(--velvet-2); /* fully opaque: no blur allowed, so nothing may ghost through */
   border-bottom: 1px solid var(--hairline);
 }
 html:not([data-call="live"]) .topbar { position: sticky; top: 0; }
@@ -255,14 +261,16 @@ html:not([data-call="live"]) .topbar { position: sticky; top: 0; }
   text-wrap: pretty;
 }
 
+/* The sound field the bird flies through: right-aligned, as tall as the masthead (the
+   drawing scales to fit, so the masthead's clip never cuts a line), fading at its edges. */
 .contours {
-  position: absolute; right: 0; top: -16px;
+  position: absolute; right: 0; top: 0;
   display: none;
-  width: clamp(300px, 34vw, 480px); height: auto; aspect-ratio: 480 / 340;
-  fill: none; stroke: var(--ripple); stroke-width: 1;
+  width: clamp(360px, 40vw, 560px); height: 100%;
+  fill: none; stroke: var(--field); stroke-width: 1;
   pointer-events: none;
-  -webkit-mask-image: radial-gradient(closest-side at 62% 50%, #000 55%, transparent);
-  mask-image: radial-gradient(closest-side at 62% 50%, #000 55%, transparent);
+  -webkit-mask-image: radial-gradient(closest-side at 60% 50%, #000 50%, transparent);
+  mask-image: radial-gradient(closest-side at 60% 50%, #000 50%, transparent);
 }
 .contours path { vector-effect: non-scaling-stroke; }
 
@@ -290,7 +298,8 @@ html:not([data-call="live"]) .topbar { position: sticky; top: 0; }
 }
 .instrument { display: grid; gap: 12px; padding: 20px; }
 
-/* Status pill and provider badge */
+/* Status pill and provider badge (on narrow phones the badge drops to its own line
+   rather than folding the status text, see the breakpoints) */
 .inst-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; }
 
 .status-indicator {
@@ -363,6 +372,9 @@ html[data-status="thinking"] #statusText { font-stretch: 78%; }
   width: calc(100% + 120px); height: calc(100% + 56px);
   fill: none; stroke: var(--ripple); stroke-width: 1;
   pointer-events: none;
+  /* rises with the well at rest (the kit's depth uses `translate`, so this composes) */
+  transform: translateY(var(--well-lift));
+  transition: transform .7s var(--ease-out);
 }
 .ripples path { vector-effect: non-scaling-stroke; }
 
@@ -370,7 +382,13 @@ html[data-status="thinking"] #statusText { font-stretch: 78%; }
 .horizon { position: absolute; inset-inline: 0; bottom: 0; z-index: 1; pointer-events: none; }
 #visualizer { display: block; width: 100%; max-width: 600px; height: var(--horizon-h); margin-inline: auto; }
 
-.avatar-ring { position: absolute; inset: 0; perspective: 640px; perspective-origin: 50% 38%; }
+/* Lifting the perspective box (not the well) keeps the projection identical: at rest the
+   whole well sits higher, so its core rests in the throat above the horizon line. */
+.avatar-ring {
+  position: absolute; inset: 0; perspective: 640px; perspective-origin: 50% 38%;
+  transform: translateY(var(--well-lift));
+  transition: transform .7s var(--ease-out);
+}
 .well {
   position: absolute; inset: 0;
   transform-style: preserve-3d;
@@ -378,8 +396,13 @@ html[data-status="thinking"] #statusText { font-stretch: 78%; }
   transition: transform .9s var(--ease-out);
 }
 html[data-call="connecting"] .well { --tilt: 44deg; }
+/* The Turn waits .2s for the scroll-on-connect to land, then turns, swings a few degrees
+   past facing you and settles (about 1.5s in all). The core's green flash lands at the end. */
+html[data-call="live"] .well,
+html[data-call="live"] .avatar-ring,
+html[data-call="live"] .ripples { transition: transform 1.3s var(--ease-turn) .2s; }
 html[data-call="live"] .well { --tilt: 0deg; }
-html[data-call="live"][data-status="error"] .well { --tilt: 14deg; transition-duration: .3s; }
+html[data-call="live"][data-status="error"] .well { --tilt: 14deg; transition: transform .3s var(--ease-out); }
 html[data-call="idle"] .well { transition-duration: .7s; }
 
 .ring, .flow {
@@ -389,9 +412,9 @@ html[data-call="idle"] .well { transition-duration: .7s; }
 }
 .ring {
   width: calc(var(--ring-max) - var(--i) * var(--ring-step));
-  border: 1.5px solid var(--ring, var(--edge));
+  border: 2px solid var(--ring, var(--edge));
   transform: translateZ(calc(var(--i) * var(--ring-z) * -1));
-  opacity: calc(1 - var(--i) * .1);
+  opacity: calc(1 - var(--i) * .06);
   transition: border-color var(--dur-state) ease;
 }
 .flow { width: var(--ring-max); border: 2px solid var(--flow, var(--sun)); opacity: 0; }
@@ -404,7 +427,9 @@ html[data-call="idle"] .well { transition-duration: .7s; }
 }
 .avatar-core::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--crown); opacity: 0; }
 
-/* Ring colour by state. Listening must beat speaking (barge-in), hence the specificity. */
+/* Ring colour by state. Listening must beat speaking (barge-in), hence the specificity.
+   At rest the rings glow from lilac at the rim to orange at the throat: the lit voice. */
+html:not([data-call="live"]) .ring                      { --ring: color-mix(in oklab, var(--lilac) calc(100% - var(--i) * 14%), var(--sun)); }
 html[data-call="live"] .ring                            { --ring: var(--lilac); }
 #avatarRing.thinking .ring                              { --ring: var(--pollen); }
 #avatarRing.speaking .ring                              { --ring: var(--sun); }
@@ -514,9 +539,12 @@ select {
   cursor: pointer;
   transition: border-color var(--dur-fast) ease;
 }
-select:hover { border-color: var(--mist); }
+select:hover:not(:disabled) { border-color: var(--mist); }
+/* The provider is locked during a call (app.js reads it live). Same treatment as disabled
+   buttons: no opacity, and --dusk on velvet-3 is still 5.81:1. */
+select:disabled { opacity: 1; color: var(--dusk); border-color: var(--edge); cursor: not-allowed; }
 option, optgroup { background: var(--velvet-3); color: var(--bone); }
-#voiceSelect.flash { outline: 2px solid var(--sun); outline-offset: 2px; }
+select.flash { outline: 2px solid var(--sun); outline-offset: 2px; } /* "Use Leah's voice" changed it */
 
 .tuning-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
 .setting-check { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
@@ -533,12 +561,11 @@ option, optgroup { background: var(--velvet-3); color: var(--bone); }
   display: flex; flex-direction: column; gap: 10px;
   padding: 16px 20px;
 }
+/* A quiet label, so "Ask it something" is the panel's one display heading */
 .panel-title {
   flex: none;
-  font-family: var(--font-display);
-  font-weight: 750; font-stretch: 90%;
-  font-size: var(--fs-panel); line-height: 1.2;
-  color: var(--bone);
+  font-weight: 700; font-size: var(--fs-xs); line-height: 1.3; letter-spacing: .02em;
+  color: var(--mist);
 }
 
 /* THE scroller: messages scroll inside it and never spill over the controls. */
@@ -553,7 +580,8 @@ option, optgroup { background: var(--velvet-3); color: var(--bone); }
   scrollbar-color: var(--scroll-thumb) transparent;
 }
 
-.transcript-placeholder { padding: 8px 4px; }
+/* 6px sides keep the chips' focus ring (2px + 3px offset) inside the scroller's clip */
+.transcript-placeholder { padding: 8px 6px; }
 .empty-title {
   font-family: var(--font-display);
   font-weight: 750; font-stretch: 90%;
@@ -681,10 +709,14 @@ html[data-status="speaking"] .transcript-msg.assistant:last-child > div:last-chi
 
 /* The Sentence Line: one sentence per plate, receding in 3D */
 .plates { perspective: 1600px; }
+/* The plates are sized to fit inside the stage; the clip margin lets their soft shadows
+   paint past its edges instead of ending in a hard line. The band's overflow-x: clip
+   is what keeps phones from scrolling sideways. */
 .plates-stage {
   position: relative;
   min-height: 440px;
   overflow: clip;
+  overflow-clip-margin: 40px;
   perspective: 1400px;
   perspective-origin: 20% 30%;
 }
@@ -796,15 +828,43 @@ html[data-status="speaking"] .transcript-msg.assistant:last-child > div:last-chi
 .voices li { display: grid; align-content: start; gap: 2px; padding-block: 12px; border-top: 1px solid rgba(18, 13, 24, .22); }
 .voice-name { font-weight: 700; font-size: var(--fs-ui-lg); line-height: 1.3; }
 .voice-lang { font-size: var(--fs-sm); line-height: 1.35; color: var(--lilac-ink); }
-.voice-id { font-size: var(--fs-xs); line-height: 1.4; color: var(--lilac-ink); overflow-wrap: anywhere; }
+/* <wbr> after the locale prefix in the markup, so an id that must wrap breaks at the hyphen */
+.voice-id { font-size: var(--fs-xs); line-height: 1.4; color: var(--lilac-ink); overflow-wrap: break-word; }
 .leah { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 28px; }
 .leah-line { font-family: var(--font-display); font-weight: 700; font-stretch: 108%; font-size: 1.375rem; line-height: 1.2; }
 
 /* §D Built by (velvet) */
+.built { display: grid; align-items: center; }
 .built .role { margin-top: 14px; font-size: 1.1875rem; line-height: 1.5; color: var(--mist); }
 .built-links { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 20px; font-size: var(--fs-body); }
 .stack { margin-top: 20px; font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1.6; color: var(--dusk); }
 #talkCta { margin-top: 36px; }
+
+/* The closing echo: the voice well again, now facing you (the page opens with it tipped
+   back). Static CSS 3D, decorative (aria-hidden); the kit tilts it toward a mouse. */
+.echo { display: none; }
+.echo-well {
+  position: relative;
+  width: 100%; aspect-ratio: 1;
+  transform-style: preserve-3d;
+  transform: rotateY(-26deg) rotateX(16deg); /* its mouth turns up and left, toward "Talk to" */
+}
+.echo-ring, .echo-core {
+  position: absolute; left: 50%; top: 50%;
+  aspect-ratio: 1; border-radius: 50%;
+  translate: -50% -50%;
+}
+.echo-ring {
+  width: calc(100% - var(--i) * 11%);
+  border: 2px solid color-mix(in oklab, var(--lilac) calc(100% - var(--i) * 14%), var(--sun));
+  transform: translateZ(calc(var(--i) * -40px));
+  opacity: calc(1 - var(--i) * .06);
+}
+.echo-core {
+  width: 20%;
+  transform: translateZ(-256px);
+  background: radial-gradient(circle at 40% 35%, var(--sun-light), var(--sun) 60%, var(--sun-deep));
+}
 
 /* --------------------------------------------------------------------------
    10. Footer
@@ -834,6 +894,9 @@ html.ll-yield .ll-char { opacity: 0; }                         /* phones: the bi
   .tuning { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 16px; row-gap: 12px; }
   .tuning-foot { grid-column: 1 / -1; }
   .check-row { min-height: 32px; }
+  /* The empty state fills the panel and centres itself (on the placeholder, never the
+     scroller; app.js still hides it with an inline display:none on the first message). */
+  .transcript-placeholder { min-height: 100%; display: flex; flex-direction: column; justify-content: center; }
 }
 
 /* Tablet: one column, the conversation gets a fixed, definite height */
@@ -855,6 +918,8 @@ html.ll-yield .ll-char { opacity: 0; }                         /* phones: the bi
      the height of instrument + tuning, and the transcript scrolls inside it. */
   .convo { contain: size; align-self: stretch; }
   .contours { display: block; }
+  .asks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ask { min-height: 52px; }
 }
 
 @media (min-width: 1100px) and (max-height: 860px) {
@@ -863,13 +928,44 @@ html.ll-yield .ll-char { opacity: 0; }                         /* phones: the bi
 }
 
 @media (min-width: 960px) {
-  .how { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; }
   .voices-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; }
-  .plates-stage { min-height: 470px; }
+  /* The full corridor. Below 1180 §A stacks, so the figure gets the whole page width. */
+  .plates-stage { min-height: 504px; }
   .plates-scene { transform: rotateX(12deg) rotateY(-24deg); }
   .plate { width: min(470px, 82%); padding: 20px 24px 16px; top: 56px; }
   .p2 { --x: 64px; --y: 124px; --z: -150px; }
   .p3 { --x: 128px; --y: 268px; --z: -300px; }
+  /* §D closes with the well facing you */
+  .built { grid-template-columns: minmax(0, 1fr) auto; column-gap: clamp(48px, 6vw, 112px); }
+  .echo { display: block; width: clamp(240px, 26vw, 380px); perspective: 1000px; }
+}
+@media (min-width: 1180px) {
+  .how { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; }
+}
+/* Side by side in a 564–674px column: a narrower, shallower corridor so the third plate
+   ends at least 8px inside the stage (measured 29–126px at 1180–1399). */
+@media (min-width: 1180px) and (max-width: 1399px) {
+  .plates-scene { transform: rotateX(12deg) rotateY(-18deg); }
+  .plate { width: min(430px, 74%); }
+  .plate-say { font-size: 1.4375rem; }
+  .p2 { --x: 44px; }
+  .p3 { --x: 88px; }
+}
+/* Phones and tablets: the sentences wrap to more lines, so the plates step further down,
+   keeping each plate's label clear of the plate in front of it. */
+@media (max-width: 959px) {
+  .plates-stage { min-height: 476px; }
+  .p2 { --y: 112px; }
+  .p3 { --y: 252px; }
+}
+@media (max-width: 419px) {
+  .plates-stage { min-height: 520px; }
+  .p2 { --y: 128px; }
+  .p3 { --y: 290px; }
+}
+/* Two voice columns would break the ids mid-word here: one column instead */
+@media (min-width: 960px) and (max-width: 1279px) {
+  .voices { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Phones */
@@ -891,6 +987,8 @@ html.ll-yield .ll-char { opacity: 0; }                         /* phones: the bi
 }
 @media (max-width: 559px) {
   .voices { grid-template-columns: minmax(0, 1fr); }
+  /* the badge drops to its own line instead of folding the status text */
+  .inst-head { flex-wrap: wrap; row-gap: 8px; }
 }
 @media (max-width: 359px) {
   .instrument { padding: 12px; gap: 8px; }
@@ -913,7 +1011,7 @@ html.ll-yield .ll-char { opacity: 0; }                         /* phones: the bi
   html[data-call="idle"] .ring { animation: breathe 2.4s ease-in-out 2 alternate; animation-delay: calc(var(--i) * -.18s); }
   #avatarRing.speaking .flow { --flow: var(--sun); animation: outward 1.3s var(--ease-flow) 3; animation-delay: calc(var(--f) * -.43s); }
   html[data-status="listening"] #avatarRing .flow { --flow: var(--amethyst); animation: inward 1.5s linear 3; animation-delay: calc(var(--f) * -.5s); }
-  html[data-call="live"] .avatar-core::after { animation: crown .7s ease-out 1; }
+  html[data-call="live"] .avatar-core::after { animation: crown .9s ease-out 1.1s 1 both; } /* lands as the Turn settles */
   #avatarRing.thinking .avatar-core { animation: turnover 2.4s linear 2; }
 
   /* Conversation */
@@ -941,14 +1039,15 @@ html.ll-yield .ll-char { opacity: 0; }                         /* phones: the bi
   .d1 .loud { animation: louder .9s var(--ease-out) .2s both; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .well { transition: none !important; } /* the Turn becomes an instant swap */
+  /* the Turn becomes an instant swap */
+  .well, .avatar-ring, .ripples { transition: none !important; }
 }
 
 @keyframes louder   { from { font-stretch: 70%; } to { font-stretch: 125%; } }
 @keyframes breathe  { to { scale: 1.035; } }
 @keyframes outward  { 0% { transform: translateZ(-170px); opacity: 0; } 25% { opacity: .9; } 100% { transform: translateZ(60px); opacity: 0; } }
 @keyframes inward   { 0% { transform: translateZ(60px); opacity: 0; } 25% { opacity: .9; } 100% { transform: translateZ(-170px); opacity: 0; } }
-@keyframes crown    { from { opacity: 1; } to { opacity: 0; } }
+@keyframes crown    { 0%, 100% { opacity: 0; } 16% { opacity: 1; } }
 @keyframes turnover { from { transform: translateZ(var(--core-z)) rotateY(0); } to { transform: translateZ(var(--core-z)) rotateY(360deg); } }
 @keyframes bubble-in { from { opacity: 0; translate: 0 6px; } }
 @keyframes fade-in  { from { opacity: 0; } }
@@ -964,8 +1063,8 @@ html.ll-yield .ll-char { opacity: 0; }                         /* phones: the bi
    -------------------------------------------------------------------------- */
 @media (forced-colors: active) {
   .btn, .btn-mic, .btn-send, .ask, .btn-ghost, select, #textInput { border: 1px solid ButtonText; }
-  .ring, .flow { border-color: CanvasText; }
-  .status-dot, .avatar-core { forced-color-adjust: none; }
+  .ring, .flow, .echo-ring { border-color: CanvasText; }
+  .status-dot, .avatar-core, .echo-core { forced-color-adjust: none; }
   .instrument, .tuning, .convo, .status-indicator, .provider-badge, .tools-inner, .transcript-msg { border: 1px solid CanvasText; }
 }
 

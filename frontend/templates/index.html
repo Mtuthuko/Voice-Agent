@@ -78,6 +78,36 @@
                 </div>
             </div>
 
+            <div class="convo">
+                <h3 class="panel-title">Conversation</h3>
+                <div class="transcript-container" id="transcriptContainer" role="log" aria-live="off" aria-label="Conversation" tabindex="0">
+                    <div class="transcript-placeholder" id="transcriptPlaceholder">
+                        <p class="empty-title">Ask it something</p>
+                        <p class="empty-line">Tap a question and {{ agent_name }} connects and answers. Or press Connect, then talk or type.</p>
+                        <div class="asks">
+                            <button class="ask" type="button" data-ask="What's the weather in Cape Town?">What's the weather in Cape Town?</button>
+                            <button class="ask" type="button" data-ask="What's the square root of 144?">What's the square root of 144?</button>
+                            <button class="ask" type="button" data-ask="What's the date today?">What's the date today?</button>
+                            <button class="ask" type="button" data-ask="What is a voice agent?">What is a voice agent?</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="tools-section" id="toolsSection" style="display: none;">
+                    <div class="tools-inner">
+                        <h4 class="tools-title"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Tool activity</h4>
+                        <div id="toolCallsLog" class="tool-calls-log"></div>
+                    </div>
+                </div>
+                <div class="text-input-row">
+                    <label for="textInput" class="sr-only">Message {{ agent_name }}</label>
+                    <input type="text" id="textInput" placeholder="Type a message, or use the mic" autocomplete="off" enterkeyhint="send">
+                    <button id="sendTextBtn" class="btn-send" type="button" aria-label="Send message">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
+                    </button>
+                </div>
+                <p class="input-hint when-idle">Enter connects and sends. Connect first to use the mic.</p>
+            </div>
+
             <div class="tuning">
                 <div class="setting">
                     <label for="providerSelect">Provider</label>
@@ -116,36 +146,6 @@
                     </div>
                     <p class="tuning-note"><span class="when-idle">Used when you connect.</span><span class="when-live">Changes apply next time you connect.</span></p>
                 </div>
-            </div>
-
-            <div class="convo">
-                <h3 class="panel-title">Conversation</h3>
-                <div class="transcript-container" id="transcriptContainer" role="log" aria-live="off" aria-label="Conversation" tabindex="0">
-                    <div class="transcript-placeholder" id="transcriptPlaceholder">
-                        <p class="empty-title">Ask it something</p>
-                        <p class="empty-line">Tap a question and {{ agent_name }} connects and answers. Or press Connect, then talk or type.</p>
-                        <div class="asks">
-                            <button class="ask" type="button" data-ask="What's the weather in Cape Town?">What's the weather in Cape Town?</button>
-                            <button class="ask" type="button" data-ask="What's the square root of 144?">What's the square root of 144?</button>
-                            <button class="ask" type="button" data-ask="What's the date today?">What's the date today?</button>
-                            <button class="ask" type="button" data-ask="What is a voice agent?">What is a voice agent?</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="tools-section" id="toolsSection" style="display: none;">
-                    <div class="tools-inner">
-                        <h4 class="tools-title"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Tool activity</h4>
-                        <div id="toolCallsLog" class="tool-calls-log"></div>
-                    </div>
-                </div>
-                <div class="text-input-row">
-                    <label for="textInput" class="sr-only">Message {{ agent_name }}</label>
-                    <input type="text" id="textInput" placeholder="Type a message, or use the mic" autocomplete="off" enterkeyhint="send">
-                    <button id="sendTextBtn" class="btn-send" type="button" aria-label="Send message">
-                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
-                    </button>
-                </div>
-                <p class="input-hint when-idle">Enter connects and sends. Connect first to use the mic.</p>
             </div>
         </section>
 
@@ -229,12 +229,12 @@
                     </div>
                     <div class="voices-col">
                         <ul class="voices" data-reveal-3d aria-label="Voices">
-                            <li><span class="voice-name">Andrew</span><span class="voice-lang">US English</span><code class="voice-id">en-US-AndrewMultilingualNeural</code></li>
-                            <li><span class="voice-name">Ava</span><span class="voice-lang">US English</span><code class="voice-id">en-US-AvaMultilingualNeural</code></li>
-                            <li><span class="voice-name">Brian</span><span class="voice-lang">US English</span><code class="voice-id">en-US-BrianMultilingualNeural</code></li>
-                            <li><span class="voice-name">Emma</span><span class="voice-lang">US English</span><code class="voice-id">en-US-EmmaMultilingualNeural</code></li>
-                            <li><span class="voice-name">Sonia</span><span class="voice-lang">British English</span><code class="voice-id">en-GB-SoniaNeural</code></li>
-                            <li class="is-leah"><span class="voice-name">Leah</span><span class="voice-lang">South African English</span><code class="voice-id">en-ZA-LeahNeural</code></li>
+                            <li><span class="voice-name">Andrew</span><span class="voice-lang">US English</span><code class="voice-id">en-US-<wbr>AndrewMultilingualNeural</code></li>
+                            <li><span class="voice-name">Ava</span><span class="voice-lang">US English</span><code class="voice-id">en-US-<wbr>AvaMultilingualNeural</code></li>
+                            <li><span class="voice-name">Brian</span><span class="voice-lang">US English</span><code class="voice-id">en-US-<wbr>BrianMultilingualNeural</code></li>
+                            <li><span class="voice-name">Emma</span><span class="voice-lang">US English</span><code class="voice-id">en-US-<wbr>EmmaMultilingualNeural</code></li>
+                            <li><span class="voice-name">Sonia</span><span class="voice-lang">British English</span><code class="voice-id">en-GB-<wbr>SoniaNeural</code></li>
+                            <li class="is-leah"><span class="voice-name">Leah</span><span class="voice-lang">South African English</span><code class="voice-id">en-ZA-<wbr>LeahNeural</code></li>
                         </ul>
                         <p class="col-note">With OpenAI Realtime: Alloy, Nova and Shimmer.</p>
                         <div class="leah">
@@ -248,11 +248,19 @@
 
         <section id="built" class="band band-velvet band-built" aria-labelledby="built-title">
             <div class="page built">
-                <h2 id="built-title" class="d2" data-perch>Built by Mtuthuko Mngomezulu.</h2>
-                <p class="role">Full-Stack Generative AI Engineer.</p>
-                <p class="built-links"><a href="https://github.com/Mtuthuko/Voice-Agent">Read the code</a><a href="https://github.com/Mtuthuko">@Mtuthuko on GitHub</a></p>
-                <p class="stack">FastAPI · WebSockets · Groq (Llama 3.3) · Edge-TTS · OpenAI Realtime API · Docker</p>
-                <a id="talkCta" class="btn btn-sun" href="#console" data-magnetic>Talk to {{ agent_name }}</a>
+                <div class="built-copy">
+                    <h2 id="built-title" class="d2" data-perch>Built by Mtuthuko Mngomezulu.</h2>
+                    <p class="role">Full-Stack Generative AI Engineer.</p>
+                    <p class="built-links"><a href="https://github.com/Mtuthuko/Voice-Agent">Read the code</a><a href="https://github.com/Mtuthuko">@Mtuthuko on GitHub</a></p>
+                    <p class="stack">FastAPI · WebSockets · Groq (Llama 3.3) · Edge-TTS · OpenAI Realtime API · Docker</p>
+                    <a id="talkCta" class="btn btn-sun" href="#console" data-magnetic data-perch="corner">Talk to {{ agent_name }}</a>
+                </div>
+                <div class="echo" aria-hidden="true">
+                    <div class="echo-well" data-tilt>
+                        <i class="echo-ring" style="--i:0"></i><i class="echo-ring" style="--i:1"></i><i class="echo-ring" style="--i:2"></i><i class="echo-ring" style="--i:3"></i><i class="echo-ring" style="--i:4"></i><i class="echo-ring" style="--i:5"></i><i class="echo-ring" style="--i:6"></i>
+                        <i class="echo-core"></i>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
