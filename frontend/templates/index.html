@@ -1,147 +1,283 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-call="idle" data-status="idle">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ agent_name }} - Voice Agent</title>
+    <meta name="description" content="Talk to {{ agent_name }}, a free, open-source voice assistant. It starts speaking about 500 ms after its first full sentence and stops when you cut in.">
+    <meta name="theme-color" content="#120D18">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Science+Gothic:wdth,wght@60..160,500..900&family=Atkinson+Hyperlegible+Next:wght@400..800&family=Atkinson+Hyperlegible+Mono:wght@400..700&display=swap">
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <div class="logo-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                            <line x1="12" y1="19" x2="12" y2="23"/>
-                            <line x1="8" y1="23" x2="16" y2="23"/>
-                        </svg>
+    <a class="skip" href="#console">Skip to the console</a>
+
+    <header class="topbar">
+        <div class="topbar-in page">
+            <a class="brand" href="#console">
+                <svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                    <g fill="none" stroke-width="1.75">
+                        <ellipse cx="16" cy="14" rx="13" ry="5.5" stroke="#C6B3FF"/>
+                        <ellipse cx="16" cy="17" rx="10" ry="4.4" stroke="#A58BFF"/>
+                        <ellipse cx="16" cy="20" rx="7" ry="3.2" stroke="#8A6BFF"/>
+                    </g>
+                    <ellipse cx="16" cy="21" rx="4" ry="2.2" fill="#FF8A3D"/>
+                </svg>
+                <span class="wordmark">{{ agent_name }}</span>
+            </a>
+            <nav class="topnav" aria-label="Page">
+                <a href="#how">How it works</a>
+                <a href="#tools">Tools</a>
+                <a href="#voices">Voices</a>
+                <a href="https://github.com/Mtuthuko/Voice-Agent">Code<svg class="icon icon-ext" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+            </nav>
+            <div class="ll-slot"></div>
+        </div>
+    </header>
+
+    <main>
+        <section class="masthead" aria-labelledby="hero-title">
+            <div class="page masthead-in">
+                <h1 id="hero-title" class="d1" data-perch><span class="h1-name">{{ agent_name }}</span> <span class="loud">speaks</span><br> while it thinks.</h1>
+                <p class="lede">Talk or type. It runs free on open-source Llama 3.3 through Groq, starts speaking about 500&nbsp;ms after its first full sentence, and stops when you cut in.</p>
+                <svg class="contours" viewBox="0 0 480 340" data-depth="0.12" aria-hidden="true" focusable="false"><path d="M337.5 168C337.4 169.2 336.8 170.5 336.3 171.6C335.7 172.8 335.1 174 334.1 175C333.1 176 331.8 177 330.5 177.7C329.1 178.5 327.5 179.2 325.8 179.6C324.2 180.1 322.4 180.4 320.7 180.5C318.9 180.6 317.1 180.5 315.4 180.4C313.7 180.2 311.9 179.9 310.3 179.4C308.7 179 307.1 178.4 305.7 177.6C304.4 176.8 303.3 175.8 302.3 174.8C301.4 173.8 300.4 172.7 299.9 171.6C299.4 170.5 299.2 169.2 299.1 168C299 166.8 299.1 165.5 299.5 164.3C299.9 163.1 300.7 161.9 301.7 160.9C302.6 159.8 303.7 158.7 305.1 157.9C306.5 157.1 308.3 156.4 310 156.1C311.7 155.7 313.7 155.8 315.4 155.8C317.2 155.8 318.8 155.9 320.5 156.1C322.2 156.3 323.9 156.4 325.5 156.8C327.2 157.2 328.8 157.7 330.3 158.4C331.7 159.1 333 160 334 161C335.1 162 335.9 163.2 336.5 164.3C337 165.5 337.5 166.8 337.5 168Z"/><path d="M357.8 169.6C357.7 172.4 356.6 175.2 355.2 177.8C353.9 180.5 352 183 349.8 185.3C347.6 187.6 345.1 189.9 342 191.7C338.9 193.4 335.1 194.7 331.4 195.7C327.7 196.7 323.7 197.4 319.8 197.7C315.8 198 311.8 197.8 307.9 197.5C304 197.1 300 196.5 296.4 195.5C292.8 194.4 289.4 192.8 286.4 191.1C283.4 189.3 280.6 187.2 278.4 185C276.3 182.8 274.6 180.2 273.3 177.7C272 175.1 270.9 172.3 270.6 169.6C270.4 166.9 270.8 164 271.8 161.2C272.7 158.5 274.1 155.7 276.3 153.2C278.4 150.8 281.2 148.4 284.5 146.7C287.8 145 292 143.7 295.9 143C299.8 142.3 304.1 142.4 308 142.3C311.9 142.3 315.7 142.6 319.5 143C323.2 143.3 327 143.7 330.6 144.6C334.3 145.5 338 146.6 341.2 148.1C344.5 149.6 347.8 151.6 350.2 153.7C352.6 155.9 354.5 158.6 355.7 161.3C357 163.9 357.9 166.8 357.8 169.6Z"/><path d="M378.9 171.2C378.8 175.5 376.6 180 374.4 184.1C372.1 188.1 368.9 191.9 365.4 195.5C361.9 199.1 358.3 202.8 353.5 205.6C348.8 208.3 342.9 210.5 337.1 212C331.3 213.6 324.9 214.3 318.8 214.7C312.7 215 306.5 214.7 300.5 214.1C294.4 213.6 288.1 213 282.5 211.4C276.9 209.9 271.4 207.5 266.7 204.8C262 202.1 257.8 198.7 254.4 195.2C251.1 191.7 248.6 187.7 246.6 183.7C244.7 179.7 243.2 175.5 242.8 171.2C242.4 166.9 243 162.5 244.3 158.2C245.6 153.9 247.5 149.3 250.8 145.6C254.1 141.8 259 138.3 264.1 135.6C269.3 133 275.5 130.8 281.6 129.7C287.7 128.6 294.6 128.9 300.7 129.1C306.7 129.3 312.3 130.4 318.1 131C323.9 131.6 329.8 131.6 335.6 132.7C341.3 133.8 347.4 135.3 352.6 137.6C357.8 139.8 362.9 142.9 366.7 146.3C370.5 149.8 373.2 154 375.2 158.1C377.3 162.3 379.1 166.9 378.9 171.2Z"/><path d="M398.9 172.8C398.4 178.7 396.4 184.8 393.5 190.3C390.7 195.9 386.6 201.3 381.8 206.1C377 210.9 371.1 215.4 364.6 219.1C358 222.7 350.4 226 342.6 228C334.8 230 326 230.5 317.7 230.9C309.5 231.3 301.3 231.1 293.2 230.5C285 229.9 276.4 229.3 268.7 227.2C261.1 225.2 253.6 221.9 247.3 218.2C241 214.6 235.6 210 231 205.2C226.4 200.5 222.6 195.3 219.7 189.9C216.8 184.5 214.4 178.6 213.8 172.8C213.1 167 214 160.8 215.8 155C217.7 149.1 220.4 142.9 224.8 137.7C229.3 132.5 235.4 127.1 242.5 123.6C249.7 120.1 259.2 118 267.7 116.9C276.3 115.8 285.4 116.8 293.6 117.1C301.8 117.4 309.1 118.1 316.9 118.7C324.7 119.3 332.7 119.2 340.5 120.7C348.3 122.1 356.5 124.2 363.6 127.2C370.8 130.3 377.7 134.3 383.2 138.9C388.6 143.5 393.7 149.1 396.3 154.7C398.9 160.3 399.4 166.9 398.9 172.8Z"/><path d="M420.2 174.4C419.4 181.9 416.2 189.6 412.3 196.5C408.4 203.5 402.9 210 396.8 216C390.7 222.1 383.7 228 375.6 232.6C367.5 237.3 357.9 241.6 348 243.9C338.2 246.3 326.9 246.4 316.6 246.8C306.2 247.2 296.1 247.2 285.9 246.6C275.7 245.9 264.8 245.3 255.1 242.8C245.4 240.4 235.6 236.5 227.7 231.9C219.7 227.4 213 221.4 207.2 215.3C201.5 209.3 196.8 202.7 193.2 195.9C189.6 189.1 186.6 181.8 185.7 174.4C184.8 167 185.5 159.3 187.7 151.8C189.8 144.3 192.8 136.2 198.5 129.7C204.3 123.2 213.1 117 222.3 112.7C231.5 108.4 243 105.2 253.6 103.8C264.3 102.4 276 103.7 286.3 104.3C296.6 104.8 305.7 106.2 315.5 107C325.3 107.9 335.1 107.7 345 109.4C354.9 111 365.5 113.3 374.7 116.9C383.9 120.5 393.2 125.5 400.3 131.2C407.4 136.9 414 144.1 417.3 151.3C420.6 158.5 421 166.9 420.2 174.4Z"/><path d="M441.5 176C440.6 185.1 436.5 194.4 431.7 202.8C426.8 211.2 419.8 219 412.5 226.3C405.3 233.7 397.8 241.7 387.9 247.1C378 252.6 365 256.3 353 259.1C340.9 261.8 328 262.9 315.6 263.5C303.2 264.2 290.9 263.9 278.5 263.1C266.1 262.4 252.7 262 241.1 259C229.5 256 218.2 250.7 208.7 245.1C199.1 239.5 190.9 232.5 183.7 225.4C176.5 218.2 170.1 210.4 165.6 202.2C161 193.9 157.6 185 156.3 176C155 167 154.9 157.3 157.7 148.3C160.5 139.3 165.7 129.8 173 122C180.3 114.1 190.3 106.3 201.4 101.2C212.6 96.1 226.9 92.5 239.9 91.3C253 90.1 267.2 93.2 279.6 93.9C291.9 94.6 302.2 95.2 314 95.7C325.8 96.2 338.2 95.1 350.3 96.8C362.4 98.5 375.5 101.4 386.7 105.8C398 110.2 409.5 116.3 417.8 123.4C426.1 130.4 432.8 139.4 436.7 148.2C440.7 157 442.3 166.9 441.5 176Z"/><path d="M464.3 177.6C462.8 188.3 455.7 199 449.6 208.8C443.5 218.6 436.1 227.7 427.5 236.3C418.9 244.8 409.7 253.6 398.3 260.1C386.8 266.7 372.8 272.4 358.8 275.5C344.8 278.7 328.9 278.3 314.3 279C299.7 279.7 285.5 280.6 271.1 279.7C256.7 278.9 241.8 277.3 227.9 273.9C214.1 270.5 199.5 265.9 188 259.6C176.6 253.2 167.6 244.3 159.3 235.8C150.9 227.3 143.3 218.1 138 208.4C132.7 198.7 128.9 188.2 127.3 177.6C125.8 167 125.5 155.6 128.5 144.9C131.5 134.2 136.7 122.6 145.3 113.3C153.8 104 166.3 94.9 179.8 89.2C193.3 83.5 211 80.1 226.5 79.1C242 78.1 258.4 82.3 272.8 83.2C287.1 84.1 298.9 84 312.6 84.4C326.3 84.7 340.5 83.8 354.9 85.4C369.3 87.1 385.7 89.5 399 94.5C412.3 99.6 424.9 107.4 434.8 115.7C444.7 124.1 453.4 134.3 458.3 144.6C463.2 155 465.7 166.9 464.3 177.6Z"/><path d="M484.8 179.2C482.9 191.5 475.3 203.8 468.3 215C461.3 226.2 452.5 236.5 442.7 246.3C432.9 256.1 422.7 266.5 409.5 273.8C396.2 281 379.2 286.2 363.1 289.8C347.1 293.5 329.8 294.5 313.3 295.5C296.7 296.5 280.5 296.7 263.8 295.9C247.2 295.2 229.1 294.9 213.3 291.1C197.4 287.2 181.5 280.6 168.8 273C156 265.3 146.3 255.1 136.9 245.3C127.6 235.5 119.3 225.3 112.5 214.3C105.7 203.2 98.5 191.3 96.3 179.2C94.1 167.1 95.6 153.9 99.4 141.5C103.1 129.2 108.9 115.9 118.7 105.2C128.6 94.5 142.6 83.6 158.3 77.3C174.1 71 195.4 68.2 213.3 67.5C231.3 66.8 249.9 72.1 266.1 73.2C282.4 74.4 295.2 74.3 310.8 74.4C326.4 74.5 343 72.2 359.7 73.7C376.3 75.2 395.1 78 410.9 83.5C426.6 89.1 442.5 97.5 454 107.1C465.5 116.7 474.7 129.1 479.8 141.1C484.9 153.1 486.7 166.9 484.8 179.2Z"/><path d="M507.7 180.8C505.2 194.8 495.6 208.6 487.3 221.2C479 233.8 469 245.3 458 256.4C447 267.5 436.2 279.7 421.3 287.9C406.4 296.2 386.9 302.1 368.7 305.9C350.4 309.7 330.6 309.5 311.9 310.4C293.2 311.4 275.4 312.2 256.7 311.6C237.9 311.1 217.1 311.4 199.3 307.1C181.5 302.9 164.1 294.8 149.8 286.1C135.5 277.5 124.7 266.1 113.4 255.3C102.2 244.4 90.1 233.5 82.3 221C74.5 208.6 69.1 194.7 66.6 180.8C64.2 166.9 63.4 151.6 67.7 137.7C71.9 123.7 80.6 109 92.3 97.1C104 85.2 119.7 72.8 137.8 66.1C156 59.5 180.8 57.7 201 57C221.2 56.3 241.2 60.6 259.2 61.9C277.2 63.2 291.4 64.8 309 64.7C326.6 64.7 345.5 60.5 364.7 61.6C383.8 62.8 405.9 65.4 424 71.6C442 77.8 460 87.6 473.1 98.6C486.1 109.6 496.5 123.7 502.3 137.4C508.1 151.1 510.2 166.8 507.7 180.8Z"/><path d="M529.4 182.4C526.1 197.9 513.8 213 504.5 227C495.1 241.1 485.6 254.3 473.3 266.6C461.1 278.8 447.6 291.3 430.9 300.3C414.2 309.3 393.4 316.4 373.3 320.7C353.3 324.9 331.3 324.3 310.6 325.6C289.9 326.9 270 329 249.2 328.4C228.5 327.8 206.3 326.5 186.2 321.9C166.2 317.3 145.2 310.1 129 300.7C112.8 291.4 101.4 278 88.8 265.8C76.3 253.6 62.8 241.4 53.5 227.5C44.3 213.6 36 197.9 33.5 182.4C31 166.9 33.4 150 38.5 134.3C43.6 118.6 51 101.5 64.1 88.2C77.2 75 96.3 61.6 117.2 54.9C138.1 48.2 167 48.2 189.6 47.9C212.2 47.7 233.2 52.7 252.9 53.5C272.5 54.3 288.1 53.6 307.7 52.8C327.2 52.1 348.5 47.8 370.1 48.9C391.8 49.9 417.1 52.5 437.6 59.2C458.2 66 479 77.1 493.4 89.5C507.8 101.9 518 118.4 524 133.9C530 149.3 532.6 166.9 529.4 182.4Z"/><path d="M551.3 184C547 201.2 532.9 217.6 522.5 233.1C512.1 248.5 502.2 263.2 488.8 276.7C475.5 290.2 460.8 304.3 442.4 314.2C424 324.1 400.7 331.9 378.5 336.2C356.3 340.5 331.8 338.5 309.1 339.9C286.3 341.2 264.8 344.7 242 344.4C219.2 344.1 194.4 343 172.3 338C150.1 333 127.2 324.8 109.2 314.5C91.1 304.3 77.6 289.9 63.9 276.4C50.2 262.9 37 249 26.9 233.6C16.9 218.2 6.9 201.2 3.6 184C0.3 166.8 1.4 147.7 7.2 130.5C13.1 113.3 23.7 95 38.7 80.6C53.8 66.2 74.3 51.5 97.3 44.2C120.4 36.9 152 36.5 176.9 36.9C201.8 37.3 225.4 45.4 246.8 46.5C268.3 47.6 284.3 45.5 305.8 43.7C327.2 41.9 351.5 35.3 375.8 35.9C400 36.4 428.6 39.3 451.2 46.9C473.9 54.5 495.3 67.6 511.5 81.4C527.7 95.2 541.8 112.7 548.4 129.8C555 146.9 555.6 166.8 551.3 184Z"/><path d="M571.8 185.6C566.7 204.4 551.2 222.1 539.8 239C528.5 255.8 518.1 271.9 503.7 286.6C489.2 301.4 473.4 317 453.2 327.5C432.9 338 406.6 345.2 382.4 349.7C358.1 354.3 332.2 353.1 307.6 354.6C283.1 356.2 259.9 359 235 358.9C210.2 358.8 182.3 359.4 158.3 354.1C134.2 348.8 110.3 338.6 90.7 327.3C71.2 315.9 56.5 300.7 40.8 286.3C25.1 271.8 8.1 257.2 -3.4 240.4C-14.9 223.6 -25.1 204.5 -28.2 185.6C-31.2 166.7 -28.4 146.1 -21.8 127.1C-15.2 108.2 -5.2 87.7 11.4 72.1C27.9 56.6 51.9 41 77.6 33.7C103.4 26.4 138.8 27.8 165.9 28.4C193 28.9 217.3 36.7 240.3 37.3C263.4 37.8 280.6 34.7 304.4 31.8C328.2 29 356.2 20 383.2 20.2C410.3 20.4 441.7 24.5 466.7 33.1C491.7 41.7 516.1 56.1 533.4 71.6C550.7 87.1 563.9 107.2 570.3 126.2C576.7 145.2 576.9 166.8 571.8 185.6Z"/><path d="M594 187.2C588.3 207.6 571.1 227 558.2 245.1C545.3 263.1 532.6 279.9 516.5 295.7C500.5 311.4 483.5 327.8 462 339.3C440.5 350.9 413.3 359.9 387.4 365C361.4 370.1 333 368.1 306.3 369.9C279.7 371.7 254.9 375.4 227.6 376C200.2 376.6 168.7 378.9 142.2 373.4C115.7 367.9 89.9 355.5 68.6 342.9C47.4 330.2 31.3 313.5 14.5 297.5C-2.4 281.5 -20.2 265.3 -32.4 246.9C-44.6 228.5 -54.9 207.8 -58.5 187.2C-62 166.6 -60.9 143.8 -53.6 123.3C-46.4 102.7 -33.6 80.7 -14.9 64.1C3.8 47.5 30.2 30.9 58.6 23.7C87 16.4 126 19.2 155.3 20.5C184.6 21.8 210 31 234.5 31.2C259.1 31.5 277 25.8 302.7 21.9C328.3 18.1 358.5 8.4 388.2 8.1C417.9 7.9 453.3 11.2 481 20.3C508.6 29.3 535.7 45.3 554.3 62.3C572.9 79.3 585.9 101.7 592.5 122.5C599.1 143.3 599.7 166.8 594 187.2Z"/><path class="field-ripple" d="M337.5 168C337.4 169.2 336.8 170.5 336.3 171.6C335.7 172.8 335.1 174 334.1 175C333.1 176 331.8 177 330.5 177.7C329.1 178.5 327.5 179.2 325.8 179.6C324.2 180.1 322.4 180.4 320.7 180.5C318.9 180.6 317.1 180.5 315.4 180.4C313.7 180.2 311.9 179.9 310.3 179.4C308.7 179 307.1 178.4 305.7 177.6C304.4 176.8 303.3 175.8 302.3 174.8C301.4 173.8 300.4 172.7 299.9 171.6C299.4 170.5 299.2 169.2 299.1 168C299 166.8 299.1 165.5 299.5 164.3C299.9 163.1 300.7 161.9 301.7 160.9C302.6 159.8 303.7 158.7 305.1 157.9C306.5 157.1 308.3 156.4 310 156.1C311.7 155.7 313.7 155.8 315.4 155.8C317.2 155.8 318.8 155.9 320.5 156.1C322.2 156.3 323.9 156.4 325.5 156.8C327.2 157.2 328.8 157.7 330.3 158.4C331.7 159.1 333 160 334 161C335.1 162 335.9 163.2 336.5 164.3C337 165.5 337.5 166.8 337.5 168Z"/></svg>
+            </div>
+        </section>
+
+        <section id="console" class="console page" aria-labelledby="console-title">
+            <h2 id="console-title" class="sr-only">Voice console</h2>
+
+            <div class="instrument">
+                <div class="inst-head">
+                    <div class="status-indicator" id="statusIndicator"><span class="status-dot" aria-hidden="true"></span><span id="statusText">Ready to connect</span></div>
+                    <div class="provider-badge" id="providerBadge">{{ provider }}</div>
+                </div>
+                <div class="voice-stage">
+                    <div class="voice" id="agentAvatar" aria-hidden="true" data-tilt>
+                        <svg class="ripples ripples-far" viewBox="0 0 360 240" data-depth="-0.05" focusable="false"><path d="M294.9 121C295 127.4 291.6 134.4 286 140.3C280.3 146.3 271.4 152.1 261 156.6C250.7 161.2 237.4 165.2 223.9 167.6C210.4 170 194.4 171.4 180 171.1C165.6 170.9 150.6 168.7 137.5 166.1C124.4 163.6 111.8 160 101.3 155.6C90.8 151.3 80.7 146 74.4 140.2C68.1 134.5 64 127.5 63.5 121C63.1 114.5 65.9 107.3 71.7 101.3C77.5 95.3 87.3 89.3 98.2 85C109.1 80.7 123.6 77.7 137.2 75.6C150.9 73.5 165.7 72.4 180 72.4C194.3 72.3 209.7 73 223.1 75.2C236.6 77.4 250.4 81 260.8 85.4C271.3 89.9 280.2 95.8 285.9 101.7C291.6 107.6 294.9 114.6 294.9 121Z"/><path d="M314.3 121.8C314.4 129.4 310.6 137.7 303.7 144.6C296.8 151.6 285.2 158 273 163.4C260.7 168.7 246 173.9 230.2 176.8C214.5 179.6 195.4 180.7 178.5 180.4C161.6 180.1 143.9 177.8 128.6 174.8C113.2 171.8 98.8 167.4 86.3 162.4C73.9 157.3 61.4 151.3 53.9 144.5C46.4 137.7 41.8 129.4 41.4 121.8C41 114.2 44.5 105.7 51.3 98.6C58.1 91.5 69.3 84.4 82.1 79.4C95 74.4 112.2 70.8 128.3 68.4C144.3 66.1 161.6 65.5 178.5 65.4C195.4 65.2 213.5 65.3 229.4 67.7C245.4 70.1 261.8 74.5 274.1 79.7C286.5 85 296.9 92 303.6 99C310.3 106 314.3 114.2 314.3 121.8Z"/><path d="M332.1 122.6C332.1 131.3 327.6 140.7 319.7 148.6C311.7 156.5 298.4 163.8 284.4 169.8C270.4 175.9 253.5 181.6 235.6 184.9C217.7 188.1 196.1 189.7 177 189.2C157.9 188.7 138.6 185.3 121.2 181.9C103.7 178.5 86.8 174.2 72.4 168.6C58 163.1 43.3 156.2 34.6 148.6C25.9 140.9 20.6 131.3 20.3 122.6C19.9 113.9 24.6 104.3 32.6 96.3C40.7 88.3 53.8 80.5 68.5 74.8C83.1 69.2 102.4 65.2 120.5 62.6C138.6 59.9 158 58.9 177 58.7C196 58.5 216.5 58.7 234.6 61.4C252.8 64 271.5 68.9 285.7 74.8C299.9 80.6 311.9 88.6 319.7 96.6C327.4 104.6 332.1 113.9 332.1 122.6Z"/><path d="M345.3 123.4C345.2 132.9 339.6 143.1 330.8 151.7C321.9 160.3 307.5 168.2 292.2 174.8C277 181.3 258.6 187.6 239.1 191C219.7 194.4 196.2 195.9 175.5 195.4C154.8 194.9 134 191.4 114.8 187.9C95.6 184.3 76.2 180.1 60.2 174.1C44.2 168.1 28.4 160.4 19 151.9C9.6 143.5 4.2 133 3.8 123.4C3.4 113.8 7.7 103.1 16.6 94.4C25.5 85.8 40.7 77.2 57.1 71.3C73.5 65.4 95 61.8 114.8 58.9C134.5 56 154.8 54.2 175.5 53.7C196.2 53.2 219.1 53.1 239 56C258.9 58.8 279.3 64.4 294.7 70.9C310.2 77.4 323.1 86.2 331.5 95C339.9 103.7 345.4 113.9 345.3 123.4Z"/></svg>
+                        <svg class="ripples ripples-near" viewBox="0 0 360 240" data-depth="0.08" focusable="false"><path d="M285 121C284.8 126.9 281.4 133.1 276.2 138.5C270.9 143.9 262.8 149.2 253.4 153.3C244 157.4 232 161.1 219.8 163.2C207.5 165.4 193.1 166.5 180 166.3C166.9 166 153.5 164.2 141.4 162C129.3 159.8 117.2 156.9 107.2 153C97.3 149.2 87.4 144.2 81.7 138.9C76.1 133.6 73 127 73.1 121C73.2 115 76.8 108.6 82.4 103.2C87.9 97.8 96.3 92.4 106.1 88.5C116 84.6 129.2 82 141.5 80.1C153.8 78.1 166.9 77 180 76.8C193.1 76.5 207.6 76.6 220 78.5C232.4 80.4 245.1 84 254.6 88.2C264.1 92.3 272 97.8 277 103.3C282.1 108.8 285.1 115.1 285 121Z"/><path d="M304.7 121.8C304.4 128.8 299.6 136.3 293.1 142.7C286.6 149.1 276.9 155.2 265.7 160.2C254.5 165.1 240.6 169.7 226.1 172.3C211.5 174.9 194.1 176.2 178.5 175.9C162.9 175.6 147.2 173.1 132.6 170.5C118.1 167.9 103.1 164.8 91.2 160.2C79.4 155.6 68.1 149.5 61.5 143.1C54.8 136.7 51.3 128.9 51.3 121.8C51.2 114.7 54.4 106.8 61.1 100.4C67.7 94 79.3 88 91.3 83.4C103.2 78.9 118.2 75.5 132.7 73.1C147.2 70.7 162.9 69.4 178.5 69C194.1 68.7 211.3 68.9 226.1 71.2C241 73.4 256.4 77.6 267.9 82.5C279.3 87.4 288.6 94.1 294.8 100.6C300.9 107.2 305 114.8 304.7 121.8Z"/><path d="M323 122.6C322.8 130.7 317.6 139.5 310 146.8C302.5 154.2 290.6 161.2 277.6 166.9C264.6 172.5 248.6 177.9 231.9 180.9C215.1 183.8 194.9 185 177 184.6C159.1 184.2 141 181.5 124.3 178.6C107.6 175.6 90.4 172 76.5 166.8C62.6 161.6 48.8 154.8 40.8 147.4C32.8 140.1 28.6 130.9 28.7 122.6C28.8 114.3 33.4 105.3 41.3 97.9C49.2 90.5 62.4 83.4 76.3 78.3C90.2 73.1 107.8 69.7 124.6 67C141.4 64.2 159 62.4 177 61.9C195 61.3 215.3 61.1 232.4 63.7C249.5 66.3 266.6 71.7 279.7 77.4C292.7 83.2 303.6 90.7 310.9 98.2C318.1 105.7 323.1 114.5 323 122.6Z"/><path d="M337.8 123.4C337.4 132.4 330.5 141.9 322 150.1C313.6 158.3 301.4 166.2 287.2 172.5C272.9 178.9 255.1 184.9 236.5 188.2C217.9 191.4 195.4 192.5 175.5 192.1C155.6 191.6 135.9 188.5 117.2 185.3C98.4 182.2 78.6 178.6 62.9 172.9C47.2 167.2 31.8 159.4 23.1 151.2C14.3 142.9 9.9 132.6 10.3 123.4C10.8 114.2 16.5 104.2 25.6 96.1C34.7 88 49.4 80.3 64.8 74.7C80.2 69.1 99.7 65.5 118.1 62.4C136.5 59.3 155.7 56.8 175.5 56.1C195.3 55.3 217.9 55.3 237 58C256.2 60.8 276 66.4 290.5 72.8C305.1 79.2 316.3 87.9 324.2 96.3C332.1 104.7 338.2 114.4 337.8 123.4Z"/></svg>
+                        <div class="avatar-ring" id="avatarRing">
+                            <div class="well">
+                                <i class="ring" style="--i:0"></i><i class="ring" style="--i:1"></i><i class="ring" style="--i:2"></i><i class="ring" style="--i:3"></i><i class="ring" style="--i:4"></i><i class="ring" style="--i:5"></i><i class="ring" style="--i:6"></i>
+                                <i class="flow" style="--f:0"></i><i class="flow" style="--f:1"></i><i class="flow" style="--f:2"></i>
+                                <div class="avatar-core"></div>
+                            </div>
+                        </div>
                     </div>
-                    <h1>{{ agent_name }}</h1>
+                    <div class="horizon"><canvas id="visualizer" width="600" height="104" aria-hidden="true"></canvas></div>
                 </div>
-                <div class="provider-badge" id="providerBadge">{{ provider }}</div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Status Display -->
-            <div class="status-section">
-                <div class="status-indicator" id="statusIndicator">
-                    <div class="status-dot"></div>
-                    <span id="statusText">Ready to connect</span>
+                <div class="call-bar">
+                    <button id="connectBtn" class="btn btn-sun" type="button">Connect</button>
+                    <button id="micBtn" class="btn-mic" type="button" aria-label="Microphone" aria-pressed="false" disabled>
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg>
+                    </button>
+                    <button id="disconnectBtn" class="btn btn-alarm" type="button" disabled>Disconnect</button>
                 </div>
             </div>
 
-            <!-- Audio Visualizer -->
-            <div class="visualizer-section">
-                <canvas id="visualizer" width="600" height="200"></canvas>
-                <div class="agent-avatar" id="agentAvatar">
-                    <div class="avatar-ring" id="avatarRing">
-                        <div class="avatar-core">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" fill="none" stroke="currentColor" stroke-width="2"/>
-                            </svg>
+            <div class="convo">
+                <h3 class="panel-title">Conversation</h3>
+                <div class="transcript-container" id="transcriptContainer" role="log" aria-live="off" aria-label="Conversation" tabindex="0">
+                    <div class="transcript-placeholder" id="transcriptPlaceholder">
+                        <p class="empty-title">Ask it something</p>
+                        <p class="empty-line">Tap a question and {{ agent_name }} connects and answers. Or press Connect, then talk or type.</p>
+                        <div class="asks">
+                            <button class="ask" type="button" data-ask="What's the weather in Cape Town?">What's the weather in Cape Town?</button>
+                            <button class="ask" type="button" data-ask="What's the square root of 144?">What's the square root of 144?</button>
+                            <button class="ask" type="button" data-ask="What's the date today?">What's the date today?</button>
+                            <button class="ask" type="button" data-ask="What is a voice agent?">What is a voice agent?</button>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Transcript Area -->
-            <div class="transcript-section">
-                <div class="transcript-container" id="transcriptContainer">
-                    <div class="transcript-placeholder" id="transcriptPlaceholder">
-                        Conversation transcript will appear here...
+                <div class="tools-section" id="toolsSection" style="display: none;">
+                    <div class="tools-inner">
+                        <h4 class="tools-title"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Tool activity</h4>
+                        <div id="toolCallsLog" class="tool-calls-log"></div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Tool Calls Display -->
-            <div class="tools-section" id="toolsSection" style="display: none;">
-                <div class="tools-header">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-                    </svg>
-                    <span>Tool Activity</span>
-                </div>
-                <div id="toolCallsLog"></div>
-            </div>
-
-            <!-- Controls -->
-            <div class="controls-section">
-                <!-- Text Input Fallback -->
                 <div class="text-input-row">
-                    <input type="text" id="textInput" placeholder="Type a message (or use voice)..." />
-                    <button id="sendTextBtn" class="btn btn-send" title="Send text">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                            <line x1="22" y1="2" x2="11" y2="13"/>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                        </svg>
+                    <label for="textInput" class="sr-only">Message {{ agent_name }}</label>
+                    <input type="text" id="textInput" placeholder="Type a message, or use the mic" autocomplete="off" enterkeyhint="send">
+                    <button id="sendTextBtn" class="btn-send" type="button" aria-label="Send message">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
                     </button>
                 </div>
+                <p class="input-hint when-idle">Enter connects and sends. Connect first to use the mic.</p>
+            </div>
 
-                <div class="button-row">
-                    <button id="connectBtn" class="btn btn-primary">
-                        Connect
-                    </button>
-                    <button id="micBtn" class="btn btn-mic" disabled>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                            <line x1="12" y1="19" x2="12" y2="23"/>
-                            <line x1="8" y1="23" x2="16" y2="23"/>
-                        </svg>
-                    </button>
-                    <button id="disconnectBtn" class="btn btn-danger" disabled>
-                        Disconnect
-                    </button>
+            <div class="tuning">
+                <div class="setting">
+                    <label for="providerSelect">Provider</label>
+                    <select id="providerSelect">
+                        <option value="groq">Groq + Llama 3.3 (Free)</option>
+                        <option value="github">GitHub Models (Free)</option>
+                        <option value="openai">OpenAI Realtime</option>
+                        <option value="elevenlabs">ElevenLabs</option>
+                    </select>
                 </div>
-
-                <!-- Settings Row -->
-                <div class="settings-row">
-                    <label class="setting">
-                        <span>Provider:</span>
-                        <select id="providerSelect">
-                            <option value="groq">Groq + Llama 3.3 (Free)</option>
-                            <option value="github">GitHub Models (Free)</option>
-                            <option value="openai">OpenAI Realtime</option>
-                            <option value="elevenlabs">ElevenLabs</option>
-                        </select>
-                    </label>
-                    <label class="setting">
-                        <span>Voice:</span>
-                        <select id="voiceSelect">
+                <div class="setting">
+                    <label for="voiceSelect">Voice</label>
+                    <select id="voiceSelect">
+                        <optgroup label="Edge-TTS voices">
                             <option value="en-US-AndrewMultilingualNeural">Andrew (EN)</option>
                             <option value="en-US-AvaMultilingualNeural">Ava (EN)</option>
                             <option value="en-US-BrianMultilingualNeural">Brian (EN)</option>
                             <option value="en-US-EmmaMultilingualNeural">Emma (EN)</option>
                             <option value="en-GB-SoniaNeural">Sonia (UK)</option>
                             <option value="en-ZA-LeahNeural">Leah (ZA)</option>
+                        </optgroup>
+                        <optgroup label="OpenAI voices">
                             <option value="alloy">Alloy (OpenAI)</option>
                             <option value="nova">Nova (OpenAI)</option>
                             <option value="shimmer">Shimmer (OpenAI)</option>
-                        </select>
-                    </label>
-                    <label class="setting toggle">
-                        <span>Tools:</span>
-                        <input type="checkbox" id="toolsToggle" checked />
-                    </label>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="tuning-foot">
+                    <div class="setting setting-check">
+                        <div class="check-row">
+                            <input type="checkbox" id="toolsToggle" checked aria-describedby="toolsHelp">
+                            <label for="toolsToggle">Tools</label>
+                        </div>
+                        <p id="toolsHelp" class="helper">Tells {{ agent_name }} it can use its tools.</p>
+                    </div>
+                    <p class="tuning-note"><span class="when-idle">Used when you connect.</span><span class="when-live">Changes apply next time you connect.</span></p>
                 </div>
             </div>
-        </main>
+        </section>
 
-        <!-- Footer -->
-        <footer class="footer">
-            <p>Built with FastAPI + Groq (Llama 3.3) + Edge-TTS + OpenAI Realtime API</p>
-        </footer>
-    </div>
+        <section id="how" class="band band-sun" aria-labelledby="how-title">
+            <div class="page how">
+                <div class="how-copy">
+                    <h2 id="how-title" class="d2" data-perch>It speaks after the <span class="loud">first</span> sentence, not the last.</h2>
+                    <p class="body">Most voice demos wait for the whole answer before they say a word. {{ agent_name }} streams the reply from the model, hands each finished sentence to Edge-TTS, and starts playing it about 500&nbsp;ms later, while the rest is still being written.</p>
+                </div>
+                <figure class="plates" aria-labelledby="plates-cap">
+                    <div class="plates-stage" data-tilt>
+                        <div class="plates-scene" aria-hidden="true">
+                            <p class="plates-ask"><b>You</b> What can you do?</p>
+                            <div class="plate p1" data-perch="corner">
+                                <p class="plate-label"><i class="beat is-spoken"></i>Spoken</p>
+                                <p class="plate-say">I can check the weather in any city.</p>
+                                <svg class="wave" viewBox="0 0 240 24" preserveAspectRatio="none" focusable="false"><path pathLength="1" d="M0 11.8L2 12.4L4 11.3L6.1 13.6L8.1 10.5L10.1 14.9L12.1 8.4L14.1 14.2L16.1 10.1L18.2 13.3L20.2 9.5L22.2 16.6L24.2 5.2L26.2 16.2L28.2 8.7L30.3 13.3L32.3 10.6L34.3 13.8L36.3 7.7L38.3 17.8L40.3 7.8L42.4 15L44.4 6.4L46.4 17.4L48.4 6.4L50.4 15.3L52.4 10L54.5 13.4L56.5 11.1L58.5 13.2L60.5 8.8L62.5 15L64.5 9.1L66.6 16.1L68.6 8.6L70.6 15.5L72.6 9.7L74.6 14.4L76.6 9.9L78.7 15.4L80.7 6.9L82.7 20.4L84.7 4.5L86.7 15.9L88.7 8L90.8 16.4L92.8 7.8L94.8 16.3L96.8 9.8L98.8 12.7L100.8 11.2L102.9 12.9L104.9 10.1L106.9 16.2L108.9 9.1L110.9 14.1L112.9 9.4L115 13.6L117 10.2L119 13.1L121 10.3L123 14.8L125 8.3L127.1 18.2L129.1 8.4L131.1 13.8L133.1 10.9L135.1 12.6L137.1 11.2L139.2 14.2L141.2 10.1L143.2 15.1L145.2 8.6L147.2 15.4L149.2 5.3L151.3 21.8L153.3 3.5L155.3 16.8L157.3 8L159.3 15.7L161.3 8.6L163.4 13.9L165.4 10.8L167.4 12.7L169.4 11.5L171.4 12.8L173.4 10.1L175.5 13.7L177.5 10.4L179.5 13.8L181.5 8.6L183.5 17.4L185.5 5.6L187.6 16.9L189.6 8L191.6 16.7L193.6 7.8L195.6 18.5L197.6 6L199.7 14.6L201.7 9.8L203.7 13.7L205.7 10.5L207.7 13L209.7 11.2L211.8 12.4L213.8 11.8L215.8 12.2L217.8 11.7L219.8 12.2L221.8 11.7L223.9 12.1L225.9 11.9L227.9 12.1L229.9 11.8L231.9 12.3L233.9 11.8L236 12.1L238 11.9L240 12.2"/></svg>
+                            </div>
+                            <div class="plate p2">
+                                <p class="plate-label"><i class="beat is-voicing"></i>Being voiced · Edge-TTS</p>
+                                <p class="plate-say">I can work out sums, and tell you the date and time.</p>
+                                <svg class="wave" viewBox="0 0 240 24" preserveAspectRatio="none" focusable="false"><path pathLength="1" d="M0 11.8L2 12.4L4 10.7L6.1 13.7L8.1 10.2L10.1 15L12.1 9.7L14.1 14.2L16.1 10L18.2 14.8L20.2 8.6L22.2 15.7L24.2 7.6L26.2 15.5L28.2 9.3L30.3 14.1L32.3 9.9L34.3 16.6L36.3 3.8L38.3 20.3L40.3 6.8L42.4 15L44.4 9.6L46.4 14.2L48.4 10L50.4 14.4L52.4 8.2L54.5 14.9L56.5 7.7L58.5 17.8L60.5 7.5L62.5 13.6L64.5 11.1L66.6 13.2L68.6 10.4L70.6 17L72.6 7.2L74.6 15.9L76.6 7.3L78.7 15.9L80.7 6L82.7 19.1L84.7 8.9L86.7 14.2L88.7 11.2L90.8 13L92.8 10.6L94.8 13.8L96.8 9.7L98.8 14.2L100.8 8.9L102.9 14.9L104.9 9.6L106.9 13L108.9 10.9L110.9 13.8L112.9 9.2L115 17.8L117 7.6L119 16.6L121 9.7L123 12.7L125 11.3L127.1 13.8L129.1 9.7L131.1 15.2L133.1 8.2L135.1 16.1L137.1 6.5L139.2 18.3L141.2 7.2L143.2 14.2L145.2 11.2L147.2 12.4L149.2 10.9L151.3 14.3L153.3 8.4L155.3 14.3L157.3 8.9L159.3 13.7L161.3 9.9L163.4 13.3L165.4 10.5L167.4 13.7L169.4 9.4L171.4 15.8L173.4 4.6L175.5 21L177.5 7.9L179.5 16.2L181.5 7.8L183.5 15.4L185.5 8.2L187.6 13.9L189.6 10.8L191.6 13.4L193.6 9.9L195.6 15.3L197.6 6.1L199.7 18L201.7 8.3L203.7 16.1L205.7 6.1L207.7 19.1L209.7 7.2L211.8 16.2L213.8 10.2L215.8 14L217.8 10.3L219.8 13.3L221.8 11.2L223.9 12.3L225.9 11.8L227.9 12.2L229.9 11.8L231.9 12.2L233.9 11.8L236 12.1L238 11.9L240 12.2"/></svg>
+                            </div>
+                            <div class="plate p3">
+                                <p class="plate-label"><i class="beat is-writing"></i>Still being written · Llama 3.3</p>
+                                <p class="plate-say"><span style="--w:0">And </span><span style="--w:1">I </span><span style="--w:2">can </span><span style="--w:3">search </span><span style="--w:4">my </span><span style="--w:5">knowledge </span><span style="--w:6">base.</span><b class="caret"></b></p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="plates-rule">First full sentence, then about 500&nbsp;ms, then speech.</p>
+                    <figcaption id="plates-cap" class="sr-only">Illustration, not a live reply: {{ agent_name }} speaks its first sentence while the second is being voiced and the third is still being written.</figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <section id="tools" class="band band-velvet" aria-labelledby="tools-title">
+            <div class="page">
+                <h2 id="tools-title" class="d2" data-perch>Ask it something real.</h2>
+                <p class="lede">Four built-in tools it calls mid-conversation.</p>
+                <ul class="ledger">
+                    <li class="tool-row" data-reveal-3d>
+                        <code class="tool-id">get_weather</code>
+                        <p class="tool-line">Live weather for any city, from Open-Meteo.</p>
+                        <button class="btn-ghost" type="button" data-ask="What's the weather in Cape Town?">What's the weather in Cape Town?<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+                    </li>
+                    <li class="tool-row" data-reveal-3d>
+                        <code class="tool-id">calculate</code>
+                        <p class="tool-line">Safe maths, trig and logs included.</p>
+                        <button class="btn-ghost" type="button" data-ask="What's the square root of 144?">What's the square root of 144?<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+                    </li>
+                    <li class="tool-row" data-reveal-3d>
+                        <code class="tool-id">get_datetime</code>
+                        <p class="tool-line">The current date and time in UTC.</p>
+                        <button class="btn-ghost" type="button" data-ask="What's the date today?">What's the date today?<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+                    </li>
+                    <li class="tool-row" data-reveal-3d>
+                        <code class="tool-id">lookup_knowledge</code>
+                        <p class="tool-line">Searches its knowledge base.</p>
+                        <button class="btn-ghost" type="button" data-ask="What is a voice agent?">What is a voice agent?<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+                    </li>
+                </ul>
+                <p class="barge">
+                    <svg class="barge-glyph" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 3.5A7 7 0 0 1 6 16.5" stroke="#FF8A3D"/><path d="M14 3.5A7 7 0 0 0 14 16.5" stroke="#A58BFF"/><path d="M2.6 7A3.6 3.6 0 0 1 2.6 13" stroke="#FF8A3D"/><path d="M17.4 7A3.6 3.6 0 0 0 17.4 13" stroke="#A58BFF"/></svg>
+                    <span>Cut in any time. Start talking or typing while {{ agent_name }} speaks and it stops to listen.</span>
+                </p>
+            </div>
+        </section>
+
+        <section id="voices" class="band band-lilac" aria-labelledby="voices-title">
+            <div class="page">
+                <h2 id="voices-title" class="d2" data-perch>Pick the engine. Pick the <span class="loud">voice</span>.</h2>
+                <div class="voices-grid">
+                    <div class="voices-col">
+                        <ul class="engines" data-reveal-3d aria-label="Engines">
+                            <li><span class="engine-name">Groq + Llama 3.3</span><span class="engine-note">free, the default</span></li>
+                            <li><span class="engine-name">GitHub Models</span><span class="engine-note">free</span></li>
+                            <li><span class="engine-name">OpenAI Realtime</span><span class="engine-note">needs a paid key</span></li>
+                            <li><span class="engine-name">ElevenLabs</span><span class="engine-note">needs a paid key</span></li>
+                        </ul>
+                        <p class="col-note">Groq and GitHub stream sentences through Edge-TTS and use your browser's speech recognition. OpenAI Realtime and ElevenLabs stream audio both ways.</p>
+                    </div>
+                    <div class="voices-col">
+                        <ul class="voices" data-reveal-3d aria-label="Voices">
+                            <li><span class="voice-name">Andrew</span><span class="voice-lang">US English</span><code class="voice-id">en-US-<wbr>AndrewMultilingualNeural</code></li>
+                            <li><span class="voice-name">Ava</span><span class="voice-lang">US English</span><code class="voice-id">en-US-<wbr>AvaMultilingualNeural</code></li>
+                            <li><span class="voice-name">Brian</span><span class="voice-lang">US English</span><code class="voice-id">en-US-<wbr>BrianMultilingualNeural</code></li>
+                            <li><span class="voice-name">Emma</span><span class="voice-lang">US English</span><code class="voice-id">en-US-<wbr>EmmaMultilingualNeural</code></li>
+                            <li><span class="voice-name">Sonia</span><span class="voice-lang">British English</span><code class="voice-id">en-GB-<wbr>SoniaNeural</code></li>
+                            <li class="is-leah"><span class="voice-name">Leah</span><span class="voice-lang">South African English</span><code class="voice-id">en-ZA-<wbr>LeahNeural</code></li>
+                        </ul>
+                        <p class="col-note">With OpenAI Realtime: Alloy, Nova and Shimmer.</p>
+                        <div class="leah">
+                            <p class="leah-line">Leah speaks South African English.</p>
+                            <button id="useLeah" class="btn btn-velvet" type="button">Use Leah's voice</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="built" class="band band-velvet band-built" aria-labelledby="built-title">
+            <div class="page built">
+                <div class="built-copy">
+                    <h2 id="built-title" class="d2" data-perch>Built by Mtuthuko Mngomezulu.</h2>
+                    <p class="role">Full-Stack Generative AI Engineer.</p>
+                    <p class="built-links"><a href="https://github.com/Mtuthuko/Voice-Agent">Read the code</a><a href="https://github.com/Mtuthuko">@Mtuthuko on GitHub</a></p>
+                    <p class="stack">FastAPI · WebSockets · Groq (Llama 3.3) · Edge-TTS · OpenAI Realtime API · Docker</p>
+                    <a id="talkCta" class="btn btn-sun" href="#console" data-magnetic data-perch="corner">Talk to {{ agent_name }}</a>
+                </div>
+                <div class="echo" aria-hidden="true">
+                    <div class="echo-well" data-tilt>
+                        <i class="echo-ring" style="--i:0"></i><i class="echo-ring" style="--i:1"></i><i class="echo-ring" style="--i:2"></i><i class="echo-ring" style="--i:3"></i><i class="echo-ring" style="--i:4"></i><i class="echo-ring" style="--i:5"></i><i class="echo-ring" style="--i:6"></i>
+                        <i class="echo-core"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="page footer-in">
+            <p>Built with FastAPI + Groq (Llama 3.3) + Edge-TTS + OpenAI Realtime API <span aria-hidden="true">·</span> MIT licence</p>
+            <p>The bird is an orange-breasted sunbird, a fynbos songbird found only in South Africa.</p>
+        </div>
+    </footer>
+    <p id="srNote" class="sr-only" aria-live="polite"></p>
+    <p id="srStatus" class="sr-only" role="status"></p>
 
     <script src="/static/js/audio-processor.js"></script>
     <script src="/static/js/visualizer.js"></script>
     <script src="/static/js/app.js"></script>
+    <script src="/static/js/living-layer.js"></script>
+    <script src="/static/js/stage.js"></script>
 </body>
 </html>
