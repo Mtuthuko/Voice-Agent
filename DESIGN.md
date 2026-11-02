@@ -37,7 +37,7 @@ a 3D "voice well" that turns to face you when the call opens.
 | `--hairline` | `#3E3049` | Decorative separators only, never a control edge |
 | `--edge` | `#7D6A90` | Control borders (3:1 or better on every velvet) |
 | `--ripple` | `#2E2338` | The faint ripples behind the well, never behind small text |
-| `--field` | lilac at 20% | The masthead's sound field (decoration only, never behind text) |
+| `--field` | lilac at 32% | The masthead's sound field (decoration only, never behind text); its two innermost loops are orange at 55% |
 | `--bone` / `--mist` / `--dusk` | `#F6F0F8` / `#C2B6CF` / `#A493B5` | Text: primary / secondary / meta |
 | `--sun` (+ `-hover`, `-press`) | `#FF8A3D` | Atlas's voice: speaking, Connect, the "Talk to" button, the orange band |
 | `--amethyst` / `--amethyst-deep` | `#A58BFF` / `#5B3FD1` | You: listening, links, send, the mic in a call |
@@ -80,28 +80,38 @@ well and masthead, so Connect stays above the fold at 1280×720.
 
 - **Buttons** (`.btn`): `.btn-sun` (orange, the only orange object in the console),
   `.btn-alarm` (Disconnect), `.btn-velvet` (on the lilac band), `.btn-mic` (a 56 px
-  circle that never changes size), `.btn-send`, `.ask` chips, `.btn-ghost` ("Ask this").
+  circle that never changes size), `.btn-send`, `.ask` chips, and `.btn-ghost`: the
+  question buttons in "Ask it something real", a lilac outline (what you say is lilac)
+  labelled with the question itself and an arrow.
 - **Panels** (`.instrument`, `.tuning`, `.convo`): velvet-2, hairline border, radius 24.
   The top bar is fully opaque velvet-2 (no blur is allowed, so nothing may show through).
 - **Status pill** (`#statusIndicator`): its dot colour follows app.js's own classes.
-  On phones under 560 px the provider badge drops to its own line rather than folding
-  the status text.
+  Its height never changes with the state: under 390 px the provider badge always has
+  its own row; from 390 px it shares the row, and on phones error text is set narrower
+  (84% width) so "Connection error." still fits beside the badge.
 - **Empty state:** "Conversation" is a quiet label, so "Ask it something" is the panel's
-  one display heading. From 700 px the empty state fills the panel and centres itself;
-  from 1100 px the four question chips sit in a 2×2 grid.
+  one display heading. From 700 px the empty state fills the panel and centres itself.
+  From 1100 px the chips never wrap: one column up to about 1350 px, then 2×2 (tracks
+  of at least 17rem; the longest label is 268 px). Under 360 px the chips and the
+  question buttons drop to 0.875rem, so every question stays on one line at 320 px.
 - **Transcript** (`#transcriptContainer`): the one scroller. Messages scroll inside
   it and can never cover the tools, input or buttons. User bubbles are lilac on the
   right; Atlas's are velvet-3 on the left with a small CSS speaker glyph and, while it
-  speaks, a caret at the end of the newest line.
+  speaks, a caret at the end of the newest line. Older messages fade out under its top
+  edge instead of being cut mid-line (a 16 px mask on the scroller only, never on the
+  canvas or its parents); the mask drops while the log has keyboard focus, because it
+  would clip the focus ring.
 - **Tool activity**: a velvet-3 box with a short scrolling log in mono.
 - **Story bands** (`.band` + `.band-sun` / `.band-velvet` / `.band-lilac`): full-bleed
   sections whose content sits in `.page`.
 - **Art**: all hand-authored SVG and CSS (mark and favicon, the ripples behind the
   well, the masthead sound field, the plate waveforms, the closing echo of the well,
   the icons in Lucide geometry, the two-tone barge-in glyph). No photos or rasters.
-- **The closing echo** (`.echo`, §D, 960 px and up): the voice well again in CSS 3D,
-  now facing you with its mouth turned toward "Talk to Atlas" (the page opens with it
-  tipped back). Static, `aria-hidden`; the kit tilts it toward a mouse.
+- **The closing echo** (`.echo`, §D): the voice well again in CSS 3D, now facing you
+  with its mouth turned toward "Talk to Atlas" (the page opens with it tipped back).
+  From 960 px it sits beside the copy; below that it is a compact 168 px mark under
+  "Talk to Atlas", its depth scaled down with it (`--echo-z`). Static, `aria-hidden`;
+  the kit tilts it toward a mouse only.
 
 ## The signature 3D moment: the Turn
 
@@ -137,8 +147,12 @@ a hard line.
 
 CSS transitions and keyframes plus the living-layer kit; no animation library.
 Everything that moves is inside `@media (prefers-reduced-motion: no-preference)`,
-and content is visible by default. During a call the only motion is state feedback
-(the well, the status width, bubbles fading in) plus the live visualizer.
+and content is visible by default. The first viewport has one authored sequence:
+the loud word widens (0.2–1.1 s), one orange ripple leaves the sound field's inner
+loops and dissolves at its edge (from 1.1 s, 1.4 s, once; a scaled copy of the
+innermost loop, right of the H1), and the sunbird arrives (1.4 s). During a call the
+only motion is state feedback (the well, the status width, bubbles fading in) plus
+the live visualizer.
 
 ## Living layer (the companion)
 
@@ -151,27 +165,32 @@ and content is visible by default. During a call the only motion is state feedba
   lethabo_legal_pal are both green); this one is the only orange-and-violet one.
 - **Where it lives:** only before a call. It flies in on load, cruises in the right
   gutter on desktop (beside the H1 on tablets; on phones level with the short first
-  line, "Atlas", clear of the longer lines), and perches beside the H1, the band
-  headings, the plates and the "Talk to Atlas" button (`data-perch="corner"`). It
-  never perches in the console, its dust is masked out of the console band, and on
-  phones it steps aside while the console passes under its lane. When you press
+  line, "Atlas", clear of the longer lines), and perches beside the H1 and the band
+  headings, and on the corners of the "Spoken" plate (the sentence Atlas just said)
+  and the "Talk to Atlas" button (`data-perch="corner"`). It never perches in the
+  console, and its dust is masked out of the console band. Where it cruises above the
+  content (phones and tablets) it steps aside while the console passes under its
+  lane, and when the reader stops with words under it and no perch in view; it comes
+  back as soon as they scroll or it heads for a perch. When you press
   Connect it loops and sparkles once as a send-off, then is destroyed for the whole
   call (no animation loop runs during audio). When a question is on its way (a chip,
-  "Ask this", or Enter before a call) it leaves at once instead, and if the call gets
+  a question button, or Enter before a call) it leaves at once instead, and if the call gets
   busy during the send-off (listening, thinking, speaking) it leaves then, so it never
   shares the screen with a working call. It flies back in after Disconnect. The pause
   button ("Moving effects") sits at the right of the top bar; a visitor's pause is
   remembered.
-- **Size and dust:** 58 px wingspan on desktop (about 46 on phones) and dust at 0.45,
-  so the bird reads as a character next to the 88 px headline. Scrolling holds
-  16.7 ms frames.
+- **Size and dust:** 68 px wingspan from 1280 px, where the gutter has room for it,
+  58 px below and about 46 on phones (set at every start, and again when the window
+  crosses 1280 px), with dust at 0.45, so the bird reads as the main character next
+  to the 88 px headline. Scrolling holds 16.7 ms frames.
 - **3D touches:** tilt on the voice well (before a call), the plates and the closing
   echo, parallax depth on the ripples and the sound field, 3D reveals on the tools
   ledger and the engine and voice lists only, and a magnetic "Talk to Atlas" button.
 - **How to change it:** edit the `SUNBIRD` object at the top of
   `frontend/static/js/stage.js`: `size` (wingspan in px), `colorsOnDark` and `colors`
   (the two palettes), `dust.amount` (0–1) or `dust: false`, `introDelay`, `calm: true`
-  for a gentler bird, or `character` for another species. Mark new landing spots with
+  for a gentler bird, or `character` for another species (`birdSize()` sets the size
+  tiers). Mark new landing spots with
   `data-perch` on a short heading. Never edit `living-layer.js` (v1.2.0, copied
   unchanged from the shared kit; to update it, copy the new file over it), and never
   call `__livingLayer.setEnabled()` from code: it saves a "paused" choice for the
@@ -179,8 +198,8 @@ and content is visible by default. During a call the only motion is state feedba
 
 ## Behaviour added in stage.js (app.js untouched)
 
-- The question chips, the "Ask this" rows, and Enter/Send before a call connect
-  first, then send the question once.
+- The question chips, the question buttons in "Ask it something real", and
+  Enter/Send before a call connect first, then send the question once.
 - "Use Leah's voice" sets the voice and announces it. Leah is an Edge-TTS voice, so
   if OpenAI Realtime or ElevenLabs is chosen the provider switches to Groq: at once
   when no call is open, otherwise when the call ends (app.js reads the provider live
@@ -192,16 +211,26 @@ and content is visible by default. During a call the only motion is state feedba
   to the conversation instead, so the on-screen keyboard doesn't cover the answer);
   after Disconnect, back to Connect; and after a question chip is used during a call
   (app.js hides the empty state it sat in), to the text field.
-- On connect, the console scrolls into view.
+- On connect (and for a question button or "Talk to Atlas" during a call) the
+  console scrolls into view and the element that has focus ends fully on screen. On
+  desktop a console that fits the window is shown whole. In one column the instrument
+  is pinned to the top unless that would push the focused field below the fold; then
+  the page scrolls only as far as it takes to show the field whole, keeping as much of
+  the well as fits (at 820×600 the call bar and conversation stay in view). Focus moves
+  first, positions are worked out up front, and the scroll is always issued, so it
+  replaces a scroll still in flight (for example the browser's own scroll to a link
+  that was just focused). Measured at 15 window sizes from 360×640 to 1440×900.
 
 Each is additive and can be removed on its own.
 
 ## Accessibility decisions
 
-- `#statusIndicator` is `role="status"`, so state changes are announced. The
-  transcript is a focusable `role="log"` with `aria-live="off"`: Atlas already speaks
-  its replies, and streamed text would be read twice. A known trade-off: in pipeline
-  mode the status announces "Hearing: '…'" as you talk, which is chatty.
+- State changes are announced from `#srStatus`, an sr-only `role="status"` copy that
+  stage.js updates only when the status words change, skipping the interim
+  "Hearing: '…'" text. The visible pill is not a live region, because app.js rewrites
+  the same "Speaking..." on every audio chunk (42 writes became 7 announcements in one
+  reply). The transcript is a focusable `role="log"` with `aria-live="off"`: Atlas
+  already speaks its replies, and streamed text would be read twice.
 - The console's source order is instrument, conversation, then settings, matching the
   phone and tablet layout, so Tab follows what you see (on desktop it goes left top,
   right, then left bottom). The grid places the panels by area name, so the layout
@@ -218,6 +247,8 @@ Each is additive and can be removed on its own.
   (the brief had a third column), because a third column clipped
   "Groq + Llama 3.3 (Free)" at 1440 px. The console row ends 18 px below a 900 px fold.
 - Phone status text 0.875rem (brief 0.9375) so "Ready to connect" fits beside the badge at 390 px.
+- The H1's line height is 0.96 from 700 px (it was 0.92), so the descender of "speaks"
+  clears "it" on the line below; phones keep 0.92.
 - Sentence Line plates (x, y, z offsets for p2 and p3):
   - 960 px and up: stage 504 px, plate width `min(470px, 82%)`, p2 (64, 124, −150),
     p3 (128, 268, −300), scene `rotateX(12deg) rotateY(-24deg)`. Below 1180 px the
@@ -236,10 +267,11 @@ Each is additive and can be removed on its own.
   horizon line in all three tiers (it hung 26–31 px below it). Rings are 2 px with a
   gentler depth fade (6% per ring).
 - The masthead sound field: `clamp(360px, 40vw, 560px)` wide, as tall as the masthead,
-  lilac at 20%, its visible lines at least 32 px clear of the H1.
+  lilac at 32% with its two innermost loops orange at 55%, its visible lines at least
+  32 px clear of the H1.
 - The voice list is one column at 960–1279 px, and every id has `<wbr>` after its
   locale prefix, so no id breaks mid-word at any width.
-- Measured: Connect's bottom edge is 749 px at 1440×900, 663 px at 1280×720,
+- Measured: Connect's bottom edge is 756 px at 1440×900, 669 px at 1280×720,
   680 px at 390×844 and 707 px at 360×740.
 
 ## How to add a new section in this style
