@@ -58,7 +58,7 @@
     character: 'sunbird',
     look: 'rich',
     finish: 'satin',
-    size: 58,                   // phones get about 46 through mobileScale
+    size: 58,                   // set at every init by birdSize(): 68 from 1280px; phones get about 46
     side: 'right',
     lane: null,                 // set from computeLane() at every init
     perch: '[data-perch]',
@@ -90,6 +90,10 @@
   var pendingAsk = null;
   var pendingProvider = null;     // a provider switch "Use Leah's voice" needs, applied when the call ends
 
+  // A wide page gives the companion a real gutter, so it can be big enough to register
+  // as the main character there: 68px from 1280px, 58px below (46px on phones via mobileScale).
+  function birdSize() { return window.innerWidth >= 1280 ? 68 : 58; }
+
   // Cruise in the right page gutter when it is wide enough; otherwise beside the H1.
   // On phones the lane sits level with the short first line ("Atlas"), clear of the
   // longer lines below it.
@@ -111,15 +115,18 @@
   var llStart = guard(function (extra) {
     if (!window.LivingLayer || call === 'live') return;
     laneNow = computeLane();
-    window.LivingLayer.init(Object.assign({}, SUNBIRD, { lane: laneNow.lane }, extra || null));
+    sizeNow = birdSize();
+    window.LivingLayer.init(Object.assign({}, SUNBIRD, { lane: laneNow.lane, size: sizeNow }, extra || null));
     dock();
-    lastMask = null; lastDust = null; lastYield = null;
+    lastMask = null; lastDust = null; lastYield = null; textYield = false;
     schedule();
+    watchStill(2500);
   });
 
   // Never use setEnabled() here: it would save a "paused" choice for the viewer.
   var llStop = guard(function () {
     clearTimeout(leaveTimer); leaveTimer = 0;
+    clearTimeout(stillTimer); stillTimer = 0; textYield = false;
     root.classList.remove('ll-leaving', 'll-yield');
     lastYield = null;
     if (window.__livingLayer) window.__livingLayer.destroy();
@@ -134,11 +141,12 @@
     var r = consoleEl.getBoundingClientRect();
     var vh = window.innerHeight;
 
-    // Top lane: the bird steps aside while the console passes under its lane.
-    var yieldNow = false;
+    // Top lane: the bird steps aside while the console passes under its lane, and when
+    // the reader stops with words under it (see checkStill).
+    var yieldNow = textYield;
     if (laneNow && laneNow.mode === 'top') {
       var y = laneNow.lane.y * vh;
-      yieldNow = y >= r.top - 24 && y <= r.bottom + 24;
+      if (y >= r.top - 24 && y <= r.bottom + 24) yieldNow = true;
     }
     if (yieldNow !== lastYield) { root.classList.toggle('ll-yield', yieldNow); lastYield = yieldNow; }
 
@@ -158,6 +166,52 @@
     }
   });
 
+  /* ---- Words under a cruising bird (top lane) --------------------------------
+   * The kit only settles on clear ground, so where no perch is in view the bird keeps
+   * hovering in its lane, which on phones and tablets often crosses body text. When the
+   * reader stops there, it steps aside (the same yield as over the console) until they
+   * scroll again or it heads for a perch. */
+  var textYield = false, stillTimer = 0, sizeNow = 0;
+  // Does the bird's body meet the line boxes of the text under it (not just its block)?
+  function wordsUnder(x, y, size) {
+    var hw = size * 0.4, hh = size * 0.3, seen = [];
+    var pts = [[x, y], [x - hw, y], [x + hw, y], [x, y - hh], [x, y + hh]];
+    for (var i = 0; i < pts.length; i++) {
+      var el = doc.elementFromPoint(pts[i][0], pts[i][1]);
+      if (!el || seen.indexOf(el) >= 0) continue;
+      seen.push(el);
+      for (var n = el.firstChild; n; n = n.nextSibling) {
+        if (n.nodeType !== 3 || !/\S/.test(n.nodeValue)) continue;
+        var range = doc.createRange();
+        range.selectNodeContents(n);
+        var rects = range.getClientRects();
+        for (var j = 0; j < rects.length; j++) {
+          var q = rects[j];
+          if (q.right > x - hw && q.left < x + hw && q.bottom > y - hh && q.top < y + hh) return true;
+        }
+      }
+    }
+    return false;
+  }
+  function setTextYield(on) {
+    if (on === textYield) return;
+    textYield = on;
+    schedule();                   // frame() applies it together with the console yield
+  }
+  var checkStill = guard(function () {
+    stillTimer = 0;
+    var ll = window.__livingLayer;
+    if (call === 'live' || !ll || !laneNow || laneNow.mode !== 'top') { setTextYield(false); return; }
+    var st = ll.state();
+    if (!st.running || st.mode !== 'cruise') setTextYield(false);   // flying in, to a perch or perched
+    else if (!textYield && wordsUnder(st.x, st.y, st.size)) setTextYield(true);
+    stillTimer = setTimeout(checkStill, 700);
+  });
+  function watchStill(delay) {
+    clearTimeout(stillTimer);
+    stillTimer = setTimeout(checkStill, delay);
+  }
+
   /* ------------------------------------------------------------------------
    * Focus and scrolling
    * ---------------------------------------------------------------------- */
@@ -166,15 +220,59 @@
     if (target) target.focus({ preventScroll: true });
   }
 
+  function px(v) { return parseFloat(v) || 0; }
+  // Always issue the scroll, even to where the page already is: a new smooth scroll replaces
+  // one still in flight (the browser's own scroll to a link that was focused a moment ago).
+  function scrollToY(y) {
+    window.scrollTo({ top: Math.max(0, Math.round(y)), behavior: behavior() });
+  }
+  // The window offset that puts el's top at the top of the window, as scrollIntoView would
+  // (its scroll-margin and the page's scroll-padding for the sticky top bar included).
+  function pinOffset(el) {
+    return window.pageYOffset + el.getBoundingClientRect().top -
+      px(getComputedStyle(el).scrollMarginTop) - px(getComputedStyle(root).scrollPaddingTop);
+  }
+
+  // Bring the console into view for the call, and keep the element that has focus there (the
+  // text field for mouse and keyboard users, the conversation on touch) fully on screen.
+  // Call it after focus has moved. Positions are worked out up front, never read mid-scroll.
   function scrollConsole() {
-    var vh = window.innerHeight;
+    var vh = window.innerHeight, y = window.pageYOffset;
+    var a = doc.activeElement;
+    var f = a && a !== doc.body && consoleEl.contains(a) ? a.getBoundingClientRect() : null;
+    var showY = f ? y + f.bottom + 16 - vh : -Infinity;   // 16 px keeps its focus ring off the edge
+    var r = consoleEl.getBoundingClientRect();
+    var pinY;
     if (window.innerWidth >= 1100) {
-      var r = consoleEl.getBoundingClientRect();
-      if (r.top < 0 || r.bottom > vh) consoleEl.scrollIntoView({ block: 'nearest', behavior: behavior() });
-    } else if (instrument) {
-      var top = instrument.getBoundingClientRect().top;
-      if (top < 0 || top > vh * 0.25) instrument.scrollIntoView({ block: 'start', behavior: behavior() });
+      // Two columns. A console that fits the window is shown whole, so its focus is shown too.
+      if (r.height + 32 <= vh - px(getComputedStyle(root).scrollPaddingTop)) {
+        if (r.top < 0 || r.bottom > vh) consoleEl.scrollIntoView({ block: 'nearest', behavior: behavior() });
+        else scrollToY(y);
+        return;
+      }
+      pinY = pinOffset(consoleEl);
+      scrollToY(showY > pinY ? showY : pinY);
+      return;
     }
+    if (!instrument) return;
+    // One column: pin the instrument to the top, unless that would leave the focused element
+    // below the fold. Then scroll only as far as it takes to show that element whole, which
+    // keeps as much of the voice well in view as fits.
+    var top = instrument.getBoundingClientRect().top;
+    pinY = pinOffset(instrument);
+    if (showY > pinY) scrollToY(showY);
+    else if (top < 0 || top > vh * 0.25 || (f && f.bottom + 16 > vh)) scrollToY(pinY);
+    else scrollToY(y);
+  }
+
+  // A chip used during a call: keep the field that just took focus in view (it was focused
+  // with preventScroll), moving the page as little as possible.
+  function revealFocus() {
+    var a = doc.activeElement;
+    if (!a || a === doc.body) return;
+    var q = a.getBoundingClientRect(), vh = window.innerHeight;
+    if (q.bottom + 16 > vh) scrollToY(window.pageYOffset + q.bottom + 16 - vh);
+    else if (q.top < 16) scrollToY(window.pageYOffset + q.top - 16);
   }
 
   /* ------------------------------------------------------------------------
@@ -258,9 +356,20 @@
     else if (next === 'idle') onIdle(prev);
   });
 
+  // Screen readers hear the status from a quiet copy: app.js rewrites the same "Speaking..."
+  // on every audio chunk, so the visible pill is not a live region. The copy speaks only
+  // when the words change, and skips the interim "Hearing: ..." text.
+  var srStatus = $('srStatus');
+  var saidStatus = (statusText.textContent || '').trim();
+
   var syncStatus = guard(function () {
     var s = (statusIndicator.className || '').replace('status-indicator', '').trim() || 'idle';
     if (root.getAttribute('data-status') !== s) root.setAttribute('data-status', s);
+    var said = (statusText.textContent || '').trim();
+    if (srStatus && said && said !== saidStatus && !/^hearing:/i.test(said)) {
+      saidStatus = said;
+      srStatus.textContent = said;
+    }
     // A send-off still playing when the call gets busy (a fast typist): the bird goes now.
     if (leaveTimer && (s === 'listening' || s === 'thinking' || s === 'speaking')) llStop();
     if (pendingAsk != null && call === 'live' && /session ready/i.test(statusText.textContent || '')) flush();
@@ -282,7 +391,7 @@
       // A chip in the empty state was focused, and app.js has just hidden the empty state:
       // keep focus where the talking happens instead of losing it to <body>.
       var a = doc.activeElement;
-      if (!a || a === doc.body || (placeholder && placeholder.contains(a))) focusForCall();
+      if (!a || a === doc.body || (placeholder && placeholder.contains(a))) { focusForCall(); revealFocus(); }
       return;
     }
     pendingAsk = text;
@@ -299,11 +408,11 @@
   doc.addEventListener('click', guard(function (e) {
     var b = e.target && e.target.closest ? e.target.closest('[data-ask]') : null;
     if (!b) return;
-    var fromStory = !consoleEl.contains(b);     // the "Ask this" rows sit below the console
+    var fromStory = !consoleEl.contains(b);     // the question rows sit below the console
     ask(b.getAttribute('data-ask'));
     if (fromStory) {
+      if (call === 'live') focusForCall();      // focus first: scrollConsole() keeps it on screen
       scrollConsole();
-      if (call === 'live') focusForCall();
     }
   }));
 
@@ -356,8 +465,8 @@
         voiceSelect.scrollIntoView({ block: 'nearest', behavior: behavior() });
         voiceSelect.focus({ preventScroll: true });
       } else {
-        scrollConsole();
         connectBtn.focus({ preventScroll: true });
+        scrollConsole();
       }
     }));
   }
@@ -366,9 +475,9 @@
   if (cta) {
     cta.addEventListener('click', guard(function (e) {
       e.preventDefault();
-      scrollConsole();
       if (call === 'live') focusForCall();
       else connectBtn.focus({ preventScroll: true });
+      scrollConsole();
     }));
   }
 
@@ -419,7 +528,11 @@
   syncMic();
   syncCall();
 
-  window.addEventListener('scroll', schedule, { passive: true });
+  window.addEventListener('scroll', function () {
+    textYield = false;            // the reader moved on: the bird follows again
+    watchStill(1200);
+    schedule();
+  }, { passive: true });
   // The console moves when the web fonts arrive (and on any reflow): keep the mask true.
   if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(function () { schedule(); });
   if ('ResizeObserver' in window) new ResizeObserver(function () { schedule(); }).observe(doc.body);
@@ -430,7 +543,7 @@
       if (call === 'live' || !window.__livingLayer) return;
       var next = computeLane();
       if (!laneNow || next.mode !== laneNow.mode || Math.abs(next.lane.x - laneNow.lane.x) > 0.01 ||
-          Math.abs(next.lane.y - laneNow.lane.y) > 0.01) {
+          Math.abs(next.lane.y - laneNow.lane.y) > 0.01 || birdSize() !== sizeNow) {
         llStart({ intro: false, reveal: SEEN_ONLY });
       }
     }), 300);
