@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Atlas's mark: the voice well at rest (three rings) with its orange core. -->
+  <rect width="32" height="32" rx="7" fill="#120D18"/>
+  <g fill="none" stroke-width="1.75">
+    <ellipse cx="16" cy="14" rx="13" ry="5.5" stroke="#C6B3FF"/>
+    <ellipse cx="16" cy="17" rx="10" ry="4.4" stroke="#A58BFF"/>
+    <ellipse cx="16" cy="20" rx="7" ry="3.2" stroke="#8A6BFF"/>
+  </g>
+  <ellipse cx="16" cy="21" rx="4" ry="2.2" fill="#FF8A3D"/>
+</svg>

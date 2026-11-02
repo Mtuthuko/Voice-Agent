@@ -11,8 +11,8 @@ class AudioVisualizer {
         this.isActive = false;
 
         // Style
-        this.barColor = '#6c63ff';
-        this.barColorSpeaking = '#fbbf24';
+        this.barColor = '#A58BFF';
+        this.barColorSpeaking = '#FF8A3D';
         this.isSpeaking = false;
 
         this.resize();
@@ -104,7 +104,7 @@ class AudioVisualizer {
 
         // Draw idle line
         const centerY = this.displayHeight / 2;
-        this.ctx.strokeStyle = 'rgba(108, 99, 255, 0.2)';
+        this.ctx.strokeStyle = 'rgba(165, 139, 255, 0.28)';
         this.ctx.lineWidth = 2;
         this.ctx.beginPath();
         this.ctx.moveTo(0, centerY);
